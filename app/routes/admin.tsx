@@ -1,12 +1,12 @@
-import AdminView from "../views/admin/admin";
+import { Creator } from "~/views/creator";
 
 export function meta() {
   return [
-    { title: "Admin view" },
-    { name: "description", content: "Manage plugin info only an admin can see" },
+    { title: "Create License Entry" },
+    { name: "description", content: "Create and publish license registry entries" },
   ];
 }
 
-export default function Admin() {
-  return <AdminView />;
-} 
+export default function CreatePage() {
+  return <Creator />;
+}

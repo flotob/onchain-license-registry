@@ -1,7 +1,6 @@
-import { NavLink, useLocation } from "react-router";
-import { useCgData } from "~/context/cg_data";
+import { NavLink } from "react-router";
 import { FaHome } from "react-icons/fa";
-import { RiAdminFill } from "react-icons/ri";
+import { HiPencilAlt } from "react-icons/hi";
 import { Divider } from "./Divider";
 
 type Props = {
@@ -10,8 +9,6 @@ type Props = {
 
 export default function Menu(props: Props) {
     const { onSelect } = props;
-    const { isAdmin } = useCgData();
-    const location = useLocation();
 
     return <nav className="flex flex-col gap-2">
         <div className="bg-bg-surface p-2 rounded self-start gap-1 w-full shadow-lg">
@@ -25,11 +22,11 @@ export default function Menu(props: Props) {
                 onClick={onSelect}
             >
                 <FaHome />
-                Home
+                View Registry
             </NavLink>
         </div>
-        {isAdmin && <div className="bg-bg-surface p-2 rounded self-start gap-1 w-full shadow-lg">
-            <Divider className="mt-1 mb-2">Admin</Divider>
+        <div className="bg-bg-surface p-2 rounded self-start gap-1 w-full shadow-lg">
+            <Divider className="mt-1 mb-2">Actions</Divider>
             <NavLink
                 to="/admin"
                 className={({ isActive }) => 
@@ -39,9 +36,9 @@ export default function Menu(props: Props) {
                 }
                 onClick={onSelect}
             >
-                <RiAdminFill />
-                Admin Info
+                <HiPencilAlt />
+                Create Entry
             </NavLink>
-        </div>}
+        </div>
     </nav>;
 }
