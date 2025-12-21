@@ -117,17 +117,21 @@ export function useRegistry(
         throw new Error(`Unknown entry schema: ${headEntry.schema}`);
       }
 
-      // Build the entry chain by following prev_entry_ref
+      // Build the entry chain by version numbers (v1, v2, v3, ...)
       const chain: LicenseEntry[] = [headEntry];
-      let currentEntry = headEntry;
-
-      while (currentEntry.prev_entry_ref) {
-        const prevEntry = await ipfs.fetchFromDir<LicenseEntry>(
-          ref.hash,
-          `/entries/v${currentEntry.version - 1}.json`
-        );
-        chain.push(prevEntry);
-        currentEntry = prevEntry;
+      
+      // Fetch all previous versions
+      for (let version = headEntry.version - 1; version >= 1; version--) {
+        try {
+          const prevEntry = await ipfs.fetchFromDir<LicenseEntry>(
+            ref.hash,
+            `/entries/v${version}.json`
+          );
+          chain.push(prevEntry);
+        } catch {
+          // Entry doesn't exist, stop fetching
+          break;
+        }
       }
 
       setEntryChain(chain);
@@ -221,31 +225,7 @@ export function useEntryVerification(
         });
       }
 
-      // Check 3: Governance doc hash (if present)
-      if (entry.governance) {
-        try {
-          const govDoc = await ipfs.fetchTextFromDir(
-            contentRef.hash,
-            entry.governance.decision_path
-          );
-          const hashValid = await verifyHash(govDoc, entry.governance.decision_sha256);
-          checks.push({
-            id: "governance_hash",
-            description: "Governance document hash matches",
-            passed: hashValid,
-            error: !hashValid ? "Governance document hash mismatch" : undefined,
-          });
-        } catch (error) {
-          checks.push({
-            id: "governance_hash",
-            description: "Governance document hash matches",
-            passed: false,
-            error: `Failed to fetch governance doc: ${error}`,
-          });
-        }
-      }
-
-      // Note: No signature verification needed.
+      // Note: No signature or governance doc verification needed.
       // Trust comes from the DAO governance vote that updates the ENS contenthash.
       // The on-chain transaction IS the proof of authorization.
 

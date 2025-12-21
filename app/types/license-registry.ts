@@ -43,17 +43,6 @@ export interface LicenseInfo {
 }
 
 /**
- * Governance decision information (optional).
- * Links to documentation of the governance process that approved this entry.
- */
-export interface GovernanceInfo {
-  /** Relative path to governance decision document */
-  decision_path: string;
-  /** SHA-256 hash of the decision document for verification */
-  decision_sha256: string;
-}
-
-/**
  * A single entry in the license registry.
  * Forms a hash-chain for tamper-evidence (each entry links to the previous).
  * 
@@ -71,10 +60,6 @@ export interface LicenseEntry {
   effective_date: string;
   /** License information */
   license: LicenseInfo;
-  /** Optional governance decision reference */
-  governance?: GovernanceInfo;
-  /** Reference to previous entry (null for genesis entry) */
-  prev_entry_ref: ContentReference | null;
 }
 
 // ============================================
@@ -84,6 +69,9 @@ export interface LicenseEntry {
 /**
  * The registry manifest (registry.json).
  * Points to the current head entry and provides metadata.
+ * 
+ * Trust model: The ENS contenthash points to the IPFS directory CID.
+ * Use head_entry_path relative to that CID to fetch the current entry.
  */
 export interface RegistryManifest {
   /** Schema identifier for versioning */
@@ -94,10 +82,8 @@ export interface RegistryManifest {
   description?: string;
   /** Current version number (matches head entry version) */
   current_version: number;
-  /** Relative path to head entry file */
+  /** Relative path to head entry file (e.g., "/entries/v1.json") */
   head_entry_path: string;
-  /** Content reference to the head entry */
-  head_entry_ref: ContentReference;
 }
 
 // ============================================
@@ -182,9 +168,5 @@ export interface CreateEntryFormData {
   licenseText: string;
   licenseFileName: string;
   effectiveDate: string;
-  governanceDoc?: {
-    content: ArrayBuffer;
-    fileName: string;
-  };
 }
 

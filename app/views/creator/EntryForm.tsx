@@ -8,22 +8,16 @@
 import { useState, useCallback, useRef } from "react";
 import { Button } from "~/components/Button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/Select";
-import type { LicenseEntry, LicenseInfo, GovernanceInfo, ContentReference } from "~/types/license-registry";
+import type { LicenseEntry, LicenseInfo } from "~/types/license-registry";
 import { COMMON_SPDX_LICENSES } from "~/types/license-registry";
-import { sha256, hashFileWithContent, hashBinaryFile } from "~/lib/hash";
+import { sha256, hashFileWithContent } from "~/lib/hash";
+import { getLicenseFilePath } from "~/lib/publisher";
 
 interface EntryFormProps {
-  /** Previous entry reference (null for genesis entry) */
-  prevEntryRef: ContentReference | null;
-  /** Current version number (new entry will be version + 1) */
+  /** Current version number (new entry will be version + 1, or 1 if genesis) */
   currentVersion: number;
   /** Callback when entry is successfully created */
-  onEntryCreated: (entry: LicenseEntry, files: {
-    licenseText: string;
-    licenseFileName: string;
-    governanceDoc?: ArrayBuffer;
-    governanceFileName?: string;
-  }) => void;
+  onEntryCreated: (entry: LicenseEntry, licenseText: string) => void;
   /** Optional: prefill with existing license */
   defaultLicense?: string;
 }
@@ -36,20 +30,14 @@ interface FormState {
   customSpdx: string;
   effectiveDate: string;
   licenseText: string;
-  licenseFileName: string;
-  governanceDoc: ArrayBuffer | null;
-  governanceFileName: string;
-  includeGovernance: boolean;
 }
 
 export function EntryForm({
-  prevEntryRef,
   currentVersion,
   onEntryCreated,
   defaultLicense,
 }: EntryFormProps) {
   const licenseInputRef = useRef<HTMLInputElement>(null);
-  const governanceInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [form, setForm] = useState<FormState>({
@@ -57,11 +45,10 @@ export function EntryForm({
     customSpdx: "",
     effectiveDate: new Date().toISOString().split("T")[0],
     licenseText: "",
-    licenseFileName: "LICENSE.md",
-    governanceDoc: null,
-    governanceFileName: "",
-    includeGovernance: false,
   });
+  
+  // Track uploaded filename for display only
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [creating, setCreating] = useState(false);
@@ -79,34 +66,13 @@ export function EntryForm({
       setForm(prev => ({
         ...prev,
         licenseText: result.content,
-        licenseFileName: file.name,
       }));
+      setUploadedFileName(file.name);
       setErrors(prev => ({ ...prev, licenseText: "" }));
     } catch (error) {
       setErrors(prev => ({
         ...prev,
         licenseText: "Failed to read file",
-      }));
-    }
-  }, []);
-
-  // Handle governance file upload
-  const handleGovernanceFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const result = await hashBinaryFile(file);
-      setForm(prev => ({
-        ...prev,
-        governanceDoc: result.content,
-        governanceFileName: file.name,
-      }));
-      setErrors(prev => ({ ...prev, governanceDoc: "" }));
-    } catch (error) {
-      setErrors(prev => ({
-        ...prev,
-        governanceDoc: "Failed to read file",
       }));
     }
   }, []);
@@ -127,10 +93,6 @@ export function EntryForm({
       newErrors.licenseText = "License text is required";
     }
 
-    if (form.includeGovernance && !form.governanceDoc) {
-      newErrors.governanceDoc = "Governance document is required when enabled";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [actualSpdxId, form]);
@@ -144,43 +106,28 @@ export function EntryForm({
     setCreating(true);
 
     try {
-      // Calculate hashes
+      // Calculate hash
       const licenseHash = await sha256(form.licenseText);
-      
-      let governanceInfo: GovernanceInfo | undefined;
-      if (form.includeGovernance && form.governanceDoc) {
-        const govHash = await sha256(new TextDecoder().decode(form.governanceDoc));
-        governanceInfo = {
-          decision_path: `/governance/${form.governanceFileName}`,
-          decision_sha256: govHash,
-        };
-      }
+      const newVersion = currentVersion + 1;
 
-      // Create license info
+      // Create license info with versioned path
       const licenseInfo: LicenseInfo = {
         spdx: actualSpdxId,
-        text_path: `/licenses/${form.licenseFileName}`,
+        text_path: getLicenseFilePath(newVersion),
         text_sha256: licenseHash,
       };
 
       // Create entry
       const entry: LicenseEntry = {
         schema: "commonground-license-entry/v1",
-        version: currentVersion + 1,
+        version: newVersion,
         created_at: new Date().toISOString(),
         effective_date: form.effectiveDate,
         license: licenseInfo,
-        governance: governanceInfo,
-        prev_entry_ref: prevEntryRef,
       };
 
       // Call the callback
-      onEntryCreated(entry, {
-        licenseText: form.licenseText,
-        licenseFileName: form.licenseFileName,
-        governanceDoc: form.governanceDoc ?? undefined,
-        governanceFileName: form.governanceFileName || undefined,
-      });
+      onEntryCreated(entry, form.licenseText);
     } catch (error) {
       console.error("Failed to create entry:", error);
       setErrors(prev => ({
@@ -190,10 +137,10 @@ export function EntryForm({
     } finally {
       setCreating(false);
     }
-  }, [validate, form, actualSpdxId, currentVersion, prevEntryRef, onEntryCreated]);
+  }, [validate, form, actualSpdxId, currentVersion, onEntryCreated]);
 
   const newVersion = currentVersion + 1;
-  const isGenesisEntry = prevEntryRef === null;
+  const isGenesisEntry = currentVersion === 0;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -284,9 +231,9 @@ export function EntryForm({
           >
             Upload File
           </Button>
-          {form.licenseFileName && form.licenseText && (
+          {uploadedFileName && form.licenseText && (
             <span className="flex items-center text-sm text-text-secondary">
-              {form.licenseFileName}
+              {uploadedFileName}
             </span>
           )}
         </div>
@@ -301,51 +248,6 @@ export function EntryForm({
         
         {errors.licenseText && (
           <p className="text-sm text-red-500">{errors.licenseText}</p>
-        )}
-      </div>
-
-      {/* Governance Document (Optional) */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="includeGovernance"
-            checked={form.includeGovernance}
-            onChange={(e) => setForm(prev => ({ ...prev, includeGovernance: e.target.checked }))}
-            className="w-4 h-4 rounded border-border text-accent focus:ring-accent"
-          />
-          <label htmlFor="includeGovernance" className="text-sm font-medium text-text-primary">
-            Include governance decision document
-          </label>
-        </div>
-
-        {form.includeGovernance && (
-          <div className="pl-6 space-y-2">
-            <input
-              ref={governanceInputRef}
-              type="file"
-              accept=".pdf,.txt,.md,.markdown"
-              onChange={handleGovernanceFileUpload}
-              className="hidden"
-            />
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => governanceInputRef.current?.click()}
-              >
-                Upload Governance Doc
-              </Button>
-              {form.governanceFileName && (
-                <span className="flex items-center text-sm text-text-secondary">
-                  {form.governanceFileName}
-                </span>
-              )}
-            </div>
-            {errors.governanceDoc && (
-              <p className="text-sm text-red-500">{errors.governanceDoc}</p>
-            )}
-          </div>
         )}
       </div>
 

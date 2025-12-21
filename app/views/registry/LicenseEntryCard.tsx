@@ -13,7 +13,6 @@ interface LicenseEntryCardProps {
   contentRef: ContentReference | null;
   isHead?: boolean;
   onViewLicense?: () => void;
-  onViewGovernance?: () => void;
 }
 
 /**
@@ -53,19 +52,14 @@ export function LicenseEntryCard({
   contentRef,
   isHead = false,
   onViewLicense,
-  onViewGovernance,
 }: LicenseEntryCardProps) {
   const licenseName = getLicenseName(entry.license.spdx);
   const effectiveDate = formatDate(entry.effective_date);
   const createdAt = formatDate(entry.created_at);
 
-  // Build gateway URLs for viewing files
+  // Build gateway URL for viewing license
   const licenseUrl = contentRef
     ? `${getContentUrl(contentRef)}${entry.license.text_path.startsWith("/") ? "" : "/"}${entry.license.text_path}`
-    : null;
-  
-  const governanceUrl = entry.governance && contentRef
-    ? `${getContentUrl(contentRef)}${entry.governance.decision_path.startsWith("/") ? "" : "/"}${entry.governance.decision_path}`
     : null;
 
   return (
@@ -120,37 +114,11 @@ export function LicenseEntryCard({
           <p className="text-text-primary">{effectiveDate}</p>
         </div>
 
-        {/* Governance (if present) */}
-        {entry.governance && (
-          <div className="space-y-2">
-            <div className="flex items-start justify-between">
-              <div>
-                <h4 className="text-sm font-medium text-text-secondary">Governance Decision</h4>
-                <p className="text-sm text-text-muted">{entry.governance.decision_path}</p>
-              </div>
-              {governanceUrl && (
-                <a
-                  href={governanceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-accent hover:text-accent-hover transition-colors"
-                >
-                  View Document →
-                </a>
-              )}
-            </div>
-            <div className="text-xs text-text-muted font-mono bg-bg-elevated rounded px-2 py-1">
-              SHA-256: {truncateHash(entry.governance.decision_sha256, 12)}
-            </div>
-          </div>
-        )}
-
-        {/* Previous Entry Reference */}
-        {entry.prev_entry_ref && (
+        {/* Previous Version */}
+        {entry.version > 1 && (
           <div className="pt-2 border-t border-border">
-            <h4 className="text-sm font-medium text-text-secondary">Previous Version</h4>
-            <p className="text-xs text-text-muted font-mono">
-              {entry.prev_entry_ref.protocol}://{truncateHash(entry.prev_entry_ref.hash, 16)}
+            <p className="text-sm text-text-muted">
+              Supersedes version {entry.version - 1}
             </p>
           </div>
         )}

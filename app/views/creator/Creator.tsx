@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import type { LicenseEntry, ContentReference } from "~/types/license-registry";
+import type { LicenseEntry } from "~/types/license-registry";
 import { useRegistry } from "~/hooks/use-registry";
 import { EntryForm } from "./EntryForm";
 import { Publisher } from "./Publisher";
@@ -19,12 +19,7 @@ type CreatorState =
   | { 
       step: "publish"; 
       entry: LicenseEntry;
-      files: {
-        licenseText: string;
-        licenseFileName: string;
-        governanceDoc?: ArrayBuffer;
-        governanceFileName?: string;
-      };
+      licenseText: string;
     };
 
 /**
@@ -60,26 +55,17 @@ export function Creator() {
   const [registryName, setRegistryName] = useState("Common Ground License Registry");
   const [registryDescription, setRegistryDescription] = useState("");
 
-  // Determine current version and prev entry ref
+  // Determine current version
   const currentVersion = registryState.status === "loaded" 
     ? registryState.manifest.current_version 
     : 0;
-  
-  const prevEntryRef: ContentReference | null = registryState.status === "loaded"
-    ? registryState.manifest.head_entry_ref
-    : null;
 
   // Handle entry creation
-  const handleEntryCreated = (entry: LicenseEntry, files: {
-    licenseText: string;
-    licenseFileName: string;
-    governanceDoc?: ArrayBuffer;
-    governanceFileName?: string;
-  }) => {
+  const handleEntryCreated = (entry: LicenseEntry, licenseText: string) => {
     setCreatorState({
       step: "publish",
       entry,
-      files,
+      licenseText,
     });
   };
 
@@ -186,7 +172,6 @@ export function Creator() {
 
           {/* Entry Form */}
           <EntryForm
-            prevEntryRef={prevEntryRef}
             currentVersion={currentVersion}
             onEntryCreated={handleEntryCreated}
             defaultLicense={
@@ -202,10 +187,7 @@ export function Creator() {
       {creatorState.step === "publish" && (
         <Publisher
           entry={creatorState.entry}
-          licenseText={creatorState.files.licenseText}
-          licenseFileName={creatorState.files.licenseFileName}
-          governanceDoc={creatorState.files.governanceDoc}
-          governanceFileName={creatorState.files.governanceFileName}
+          licenseText={creatorState.licenseText}
           registryName={
             registryState.status === "loaded"
               ? registryState.manifest.name

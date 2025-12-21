@@ -222,10 +222,6 @@ export function RegistryViewer({ ensName, contentRef }: RegistryViewerProps) {
         )}
         <div className="flex items-center gap-4 mt-2 text-sm text-text-muted">
           <span>Version {manifest.current_version}</span>
-          <span>•</span>
-          <span className="font-mono">
-            {manifest.head_entry_ref.protocol}://{manifest.head_entry_ref.hash.slice(0, 16)}...
-          </span>
         </div>
       </div>
 

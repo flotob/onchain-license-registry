@@ -7,21 +7,14 @@
 import { useState, useCallback } from "react";
 import { Button } from "~/components/Button";
 import type { LicenseEntry } from "~/types/license-registry";
-import { COMMON_SPDX_LICENSES } from "~/types/license-registry";
 import { createRegistryPackage, downloadBlob, generatePackageFilename } from "~/lib/publisher";
 import { LicenseEntryCard } from "~/views/registry/LicenseEntryCard";
 
 interface PublisherProps {
-  /** The signed entry to publish */
+  /** The entry to publish */
   entry: LicenseEntry;
   /** License text content */
   licenseText: string;
-  /** License file name */
-  licenseFileName: string;
-  /** Optional governance document */
-  governanceDoc?: ArrayBuffer;
-  /** Optional governance file name */
-  governanceFileName?: string;
   /** Registry name */
   registryName: string;
   /** Optional registry description */
@@ -32,20 +25,9 @@ interface PublisherProps {
   onPublished?: () => void;
 }
 
-/**
- * Get license name from SPDX ID.
- */
-function getLicenseName(spdx: string): string {
-  const license = COMMON_SPDX_LICENSES.find(l => l.id === spdx);
-  return license?.name ?? spdx;
-}
-
 export function Publisher({
   entry,
   licenseText,
-  licenseFileName,
-  governanceDoc,
-  governanceFileName,
   registryName,
   registryDescription,
   onBack,
@@ -65,9 +47,6 @@ export function Publisher({
         description: registryDescription,
         newEntry: entry,
         licenseText,
-        licenseFileName,
-        governanceDoc,
-        governanceFileName,
       });
 
       const filename = generatePackageFilename(registryName, entry.version);
@@ -80,7 +59,7 @@ export function Publisher({
     } finally {
       setDownloading(false);
     }
-  }, [entry, licenseText, licenseFileName, governanceDoc, governanceFileName, registryName, registryDescription, onPublished]);
+  }, [entry, licenseText, registryName, registryDescription, onPublished]);
 
   return (
     <div className="space-y-6">
@@ -105,7 +84,7 @@ export function Publisher({
               Entry Created Successfully!
             </h3>
             <p className="text-sm text-text-secondary mt-1">
-              Your license entry has been signed. Download the registry package and upload it to IPFS.
+              Download the registry package, upload to IPFS, then propose a DAO governance vote.
             </p>
           </div>
         </div>
@@ -140,7 +119,8 @@ export function Publisher({
             <li>Download the registry package (ZIP)</li>
             <li>Extract and upload the folder to IPFS (e.g., via web3.storage, Pinata)</li>
             <li>Copy the resulting CID</li>
-            <li>Update the ENS contenthash record to point to ipfs://CID</li>
+            <li>Propose a DAO governance vote to update the ENS contenthash</li>
+            <li>Once approved and executed, the registry becomes official</li>
           </ol>
         </div>
 
@@ -181,7 +161,7 @@ export function Publisher({
 
         {downloaded && (
           <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 text-sm text-accent">
-            Package downloaded! Now upload the extracted folder to IPFS.
+            Package downloaded! Upload to IPFS, then propose a DAO vote to make it official.
           </div>
         )}
       </div>
@@ -230,4 +210,3 @@ export function Publisher({
 }
 
 export default Publisher;
-

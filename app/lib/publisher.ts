@@ -5,8 +5,7 @@
  */
 
 import JSZip from "jszip";
-import type { LicenseEntry, RegistryManifest, ContentReference } from "~/types/license-registry";
-import { sha256 } from "./hash";
+import type { LicenseEntry, RegistryManifest } from "~/types/license-registry";
 
 /**
  * Data needed to create a registry package.
@@ -20,24 +19,28 @@ export interface RegistryPackageData {
   newEntry: LicenseEntry;
   /** License text content */
   licenseText: string;
-  /** License file name (e.g., "LICENSE.md") */
-  licenseFileName: string;
-  /** Optional governance document content */
-  governanceDoc?: ArrayBuffer;
-  /** Optional governance file name */
-  governanceFileName?: string;
   /** Previous entries (for including history) */
   previousEntries?: LicenseEntry[];
+  /** Previous license texts (keyed by version number) */
+  previousLicenses?: Map<number, string>;
+}
+
+/**
+ * Generate the license file path for a given version.
+ * Uses versioned naming to avoid conflicts: /licenses/v1.md, /licenses/v2.md, etc.
+ */
+export function getLicenseFilePath(version: number): string {
+  return `/licenses/v${version}.md`;
 }
 
 /**
  * Create a complete registry ZIP package.
  * 
  * Structure:
- * /registry.json         - Manifest pointing to head entry
- * /licenses/LICENSE.md   - License text files
- * /governance/...        - Governance documents
- * /entries/v1.json       - Entry JSON files
+ * /registry.json       - Manifest pointing to head entry
+ * /licenses/v1.md      - License text for version 1
+ * /licenses/v2.md      - License text for version 2 (if different)
+ * /entries/v1.json     - Entry JSON files
  * /entries/v2.json
  * ...
  */
@@ -47,45 +50,40 @@ export async function createRegistryPackage(data: RegistryPackageData): Promise<
   // Create folders
   const licensesFolder = zip.folder("licenses");
   const entriesFolder = zip.folder("entries");
-  const governanceFolder = zip.folder("governance");
 
-  if (!licensesFolder || !entriesFolder || !governanceFolder) {
+  if (!licensesFolder || !entriesFolder) {
     throw new Error("Failed to create ZIP folders");
   }
 
-  // Add license text
-  licensesFolder.file(data.licenseFileName, data.licenseText);
-
-  // Add governance doc if present
-  if (data.governanceDoc && data.governanceFileName) {
-    governanceFolder.file(data.governanceFileName, data.governanceDoc);
-  }
+  // Add the new entry's license with versioned filename
+  const licenseFileName = `v${data.newEntry.version}.md`;
+  licensesFolder.file(licenseFileName, data.licenseText);
 
   // Add the new entry
   const entryFileName = `v${data.newEntry.version}.json`;
   entriesFolder.file(entryFileName, JSON.stringify(data.newEntry, null, 2));
 
-  // Add previous entries if provided
+  // Add previous entries and their licenses if provided
   if (data.previousEntries) {
     for (const entry of data.previousEntries) {
-      const prevFileName = `v${entry.version}.json`;
-      entriesFolder.file(prevFileName, JSON.stringify(entry, null, 2));
+      const prevEntryFileName = `v${entry.version}.json`;
+      entriesFolder.file(prevEntryFileName, JSON.stringify(entry, null, 2));
+      
+      // Add previous license if available
+      if (data.previousLicenses?.has(entry.version)) {
+        const prevLicenseFileName = `v${entry.version}.md`;
+        licensesFolder.file(prevLicenseFileName, data.previousLicenses.get(entry.version)!);
+      }
     }
   }
 
-  // Create manifest
-  // Note: The actual CID will be determined after upload
-  // For now, we use a placeholder that will be updated by the IPFS upload process
+  // Create manifest (no head_entry_ref - path is sufficient)
   const manifest: RegistryManifest = {
     schema: "commonground-license-registry/v1",
     name: data.name,
     description: data.description,
     current_version: data.newEntry.version,
     head_entry_path: `/entries/${entryFileName}`,
-    head_entry_ref: {
-      protocol: "ipfs",
-      hash: "PLACEHOLDER_CID_WILL_BE_SET_AFTER_UPLOAD",
-    },
   };
 
   zip.file("registry.json", JSON.stringify(manifest, null, 2));
@@ -97,10 +95,9 @@ This package contains the license registry for ${data.name}.
 
 ## Structure
 
-- \`registry.json\` - Registry manifest
-- \`entries/\` - License entry JSON files
-- \`licenses/\` - License text files
-- \`governance/\` - Governance decision documents
+- \`registry.json\` - Registry manifest (points to head entry)
+- \`entries/\` - License entry JSON files (v1.json, v2.json, ...)
+- \`licenses/\` - License text files (v1.md, v2.md, ...)
 
 ## Current Version
 
@@ -109,15 +106,24 @@ Effective: ${data.newEntry.effective_date}
 
 ## Verification
 
-Each entry contains SHA-256 hashes of the license text and governance documents.
-Signatures can be verified using EIP-712 typed data verification.
+Each entry contains SHA-256 hashes of the license text for integrity verification.
+Trust is established through the DAO governance vote that updates the ENS contenthash.
 
 ## Publishing
 
 To publish this registry:
 1. Upload this entire folder to IPFS (e.g., via web3.storage, Pinata, or ipfs add -r)
 2. Note the resulting CID
-3. Update the ENS contenthash record to point to the CID
+3. Propose a DAO governance vote to update the ENS contenthash
+4. Once approved and executed, the registry becomes official
+
+## Fetching
+
+To verify/fetch this registry:
+1. Resolve ENS name → get IPFS directory CID
+2. Fetch \`/registry.json\` from that CID
+3. Use \`head_entry_path\` to fetch the current entry
+4. Verify license text SHA-256 hash matches
 `;
 
   zip.file("README.md", readme);
@@ -150,11 +156,10 @@ export function generatePackageFilename(name: string, version: number): string {
 }
 
 /**
- * Validate that all required files are present in the entry.
+ * Validate that all required files are present.
  */
-export function validateEntryFiles(entry: LicenseEntry, files: {
+export function validateEntryFiles(files: {
   licenseText?: string;
-  governanceDoc?: ArrayBuffer;
 }): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
@@ -162,13 +167,8 @@ export function validateEntryFiles(entry: LicenseEntry, files: {
     errors.push("License text is required");
   }
 
-  if (entry.governance && !files.governanceDoc) {
-    errors.push("Governance document is required when governance info is set");
-  }
-
   return {
     valid: errors.length === 0,
     errors,
   };
 }
-
