@@ -1,5 +1,5 @@
 // Tremor Divider [v1.0.0]
-// Edited to remove all dark mode styles and ensure light mode compatibility
+// Updated to use semantic color tokens for dark/light mode support
 
 import React from "react"
 
@@ -15,7 +15,7 @@ const Divider = React.forwardRef<HTMLDivElement, DividerProps>(
         // base
         "mx-auto my-6 flex w-full items-center justify-between gap-3 text-sm",
         // text color
-        "text-gray-500",
+        "text-text-muted",
         className,
       )}
       tremor-id="tremor-raw"
@@ -28,7 +28,7 @@ const Divider = React.forwardRef<HTMLDivElement, DividerProps>(
               // base
               "h-[1px] w-full",
               // background color
-              "bg-gray-200",
+              "bg-border",
             )}
           />
           <div className="whitespace-nowrap text-inherit">{children}</div>
@@ -37,7 +37,7 @@ const Divider = React.forwardRef<HTMLDivElement, DividerProps>(
               // base
               "h-[1px] w-full",
               // background color
-              "bg-gray-200",
+              "bg-border",
             )}
           />
         </>
@@ -47,7 +47,7 @@ const Divider = React.forwardRef<HTMLDivElement, DividerProps>(
             // base
             "h-[1px] w-full",
             // background color
-            "bg-gray-200",
+            "bg-border",
           )}
         />
       )}

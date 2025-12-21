@@ -1,12 +1,108 @@
 @import "tailwindcss";
 @tailwind utilities;
 
+/* ============================================
+   Theme CSS Variables
+   ============================================ */
+
+:root {
+  /* CG-provided background (set dynamically via JS from URL param) */
+  --cg-bg-color: #F1F1F1;
+
+  /* Backgrounds */
+  --color-bg-base: var(--cg-bg-color);
+  --color-bg-surface: #FFFFFF;
+  --color-bg-elevated: #E8E8E8;
+  --color-bg-muted: #D4D4D4;
+
+  /* Text */
+  --color-text-primary: #111111;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #6B7280;
+  --color-text-inverted: #FFFFFF;
+
+  /* Borders */
+  --color-border: #E5E7EB;
+  --color-border-strong: #D1D5DB;
+
+  /* Accent (interactive elements) */
+  --color-accent: #3B82F6;
+  --color-accent-hover: #2563EB;
+  --color-accent-muted: #DBEAFE;
+
+  /* Destructive */
+  --color-destructive: #DC2626;
+  --color-destructive-hover: #B91C1C;
+
+  /* Overlays */
+  --color-overlay: rgba(0, 0, 0, 0.7);
+  --color-overlay-light: rgba(0, 0, 0, 0.3);
+}
+
+html.dark {
+  /* Backgrounds */
+  --color-bg-base: var(--cg-bg-color);
+  --color-bg-surface: #1E2028;
+  --color-bg-elevated: #252830;
+  --color-bg-muted: #2A2D38;
+
+  /* Text */
+  --color-text-primary: #F1F1F1;
+  --color-text-secondary: #A1A1AA;
+  --color-text-muted: #71717A;
+  --color-text-inverted: #161820;
+
+  /* Borders */
+  --color-border: #2E3140;
+  --color-border-strong: #3F4354;
+
+  /* Accent (interactive elements) */
+  --color-accent: #60A5FA;
+  --color-accent-hover: #3B82F6;
+  --color-accent-muted: #1E3A5F;
+
+  /* Destructive */
+  --color-destructive: #EF4444;
+  --color-destructive-hover: #DC2626;
+
+  /* Overlays */
+  --color-overlay: rgba(0, 0, 0, 0.8);
+  --color-overlay-light: rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   Tailwind Theme Extension
+   ============================================ */
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-}
 
-@theme {
+  /* Register semantic colors as Tailwind utilities */
+  --color-bg-base: var(--color-bg-base);
+  --color-bg-surface: var(--color-bg-surface);
+  --color-bg-elevated: var(--color-bg-elevated);
+  --color-bg-muted: var(--color-bg-muted);
+
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-inverted: var(--color-text-inverted);
+
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-muted: var(--color-accent-muted);
+
+  --color-destructive: var(--color-destructive);
+  --color-destructive-hover: var(--color-destructive-hover);
+
+  --color-overlay: var(--color-overlay);
+  --color-overlay-light: var(--color-overlay-light);
+
+  /* Animations */
   --animate-drawer-slide-left-and-fade: drawerSlideLeftAndFade 150ms cubic-bezier(0.16, 1, 0.3, 1);
   --animate-drawer-slide-right-and-fade: drawerSlideRightAndFade 150ms ease-in;
 
@@ -32,35 +128,46 @@
   }
 }
 
-:root {
-  color-scheme: light;
-}
+/* ============================================
+   Base Styles
+   ============================================ */
 
 html,
 body {
-  @apply bg-slate-200;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
 }
 
+/* ============================================
+   Typography
+   ============================================ */
+
 h1 {
-  @apply text-4xl font-bold text-slate-900 mb-4;
+  @apply text-4xl font-bold mb-4;
+  color: var(--color-text-primary);
 }
 
 h2 {
-  @apply text-3xl font-semibold text-slate-800 mb-3;
+  @apply text-3xl font-semibold mb-3;
+  color: var(--color-text-primary);
 }
 
 h3 {
-  @apply text-2xl font-medium text-slate-700 mb-2;
+  @apply text-2xl font-medium mb-2;
+  color: var(--color-text-primary);
 }
 
 h4 {
-  @apply text-xl font-medium text-slate-600 mb-2;
+  @apply text-xl font-medium mb-2;
+  color: var(--color-text-secondary);
 }
 
 h5 {
-  @apply text-lg font-medium text-slate-600 mb-1;
+  @apply text-lg font-medium mb-1;
+  color: var(--color-text-secondary);
 }
 
 h6 {
-  @apply text-base font-medium text-slate-600 mb-1;
+  @apply text-base font-medium mb-1;
+  color: var(--color-text-secondary);
 }

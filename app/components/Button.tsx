@@ -1,5 +1,5 @@
 // Tremor Button [v1.0.0]
-// Edited to remove all dark mode styles and ensure light mode compatibility
+// Updated to use semantic color tokens for dark/light mode support
 
 import React from "react"
 import { Slot } from "@radix-ui/react-slot"
@@ -23,25 +23,25 @@ const buttonVariants = tv({
         // border
         "border-transparent",
         // text color
-        "text-white",
+        "text-text-inverted",
         // background color
-        "bg-blue-500",
+        "bg-accent",
         // hover color
-        "hover:bg-blue-600",
+        "hover:bg-accent-hover",
         // disabled
-        "disabled:bg-blue-300 disabled:text-white",
+        "disabled:opacity-50",
       ],
       secondary: [
         // border
-        "border-gray-300",
+        "border-border-strong",
         // text color
-        "text-gray-900",
+        "text-text-primary",
         // background color
-        "bg-white",
+        "bg-bg-surface",
         //hover color
-        "hover:bg-gray-50",
+        "hover:bg-bg-elevated",
         // disabled
-        "disabled:text-gray-400",
+        "disabled:opacity-50",
       ],
       light: [
         // base
@@ -49,13 +49,13 @@ const buttonVariants = tv({
         // border
         "border-transparent",
         // text color
-        "text-gray-900",
+        "text-text-primary",
         // background color
-        "bg-gray-200",
+        "bg-bg-elevated",
         // hover color
-        "hover:bg-gray-300/70",
+        "hover:bg-bg-muted",
         // disabled
-        "disabled:bg-gray-100 disabled:text-gray-400",
+        "disabled:opacity-50",
       ],
       ghost: [
         // base
@@ -63,23 +63,23 @@ const buttonVariants = tv({
         // border
         "border-transparent",
         // text color
-        "text-gray-900",
+        "text-text-primary",
         // hover color
-        "bg-transparent hover:bg-gray-100",
+        "bg-transparent hover:bg-bg-elevated",
         // disabled
-        "disabled:text-gray-400",
+        "disabled:opacity-50",
       ],
       destructive: [
         // text color
-        "text-white",
+        "text-text-inverted",
         // border
         "border-transparent",
         // background color
-        "bg-red-600",
+        "bg-destructive",
         // hover color
-        "hover:bg-red-700",
+        "hover:bg-destructive-hover",
         // disabled
-        "disabled:bg-red-300 disabled:text-white",
+        "disabled:opacity-50",
       ],
     },
   },

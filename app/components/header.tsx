@@ -29,7 +29,7 @@ function CommunityInfo({ communityInfo }: { communityInfo: CommunityInfoResponse
     <div className="rounded-xl w-10 h-10 overflow-hidden">
       <img src={communityInfo.smallLogoUrl || communityInfo.largeLogoUrl} />
     </div>
-    <div className="text-xl font-bold">
+    <div className="text-xl font-bold text-text-primary">
       {communityInfo.title}
     </div>
   </>)
@@ -69,7 +69,7 @@ function WalletConnect() {
     return (
       <div className="flex flex-row items-center gap-2">
         <ChainSwitcher />
-        <p className="font-mono text-xs">Connected: {!address ? "Unknown" : `${address.slice(0, 6)}...${address.slice(-4)}`}</p>
+        <p className="font-mono text-xs text-text-secondary">Connected: {!address ? "Unknown" : `${address.slice(0, 6)}...${address.slice(-4)}`}</p>
         <Button
           variant="primary"
           onClick={() => disconnect()}

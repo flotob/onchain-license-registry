@@ -14,7 +14,7 @@ export default function Layout() {
     return (<>
       <div className="grid grid-cols-[100vw] h-full max-h-full grid-rows-[auto_1fr] overflow-hidden">
         <Header />
-        <div className="p-4 pb-8 overflow-auto rounded bg-slate-100 shadow-lg h-full max-h-full w-full max-w-full">
+        <div className="p-4 pb-8 overflow-auto rounded bg-bg-surface shadow-lg h-full max-h-full w-full max-w-full">
           <Outlet />
         </div>
         <Button className="absolute bottom-4 right-4 z-50 rounded-full p-2" onClick={() => setDrawerOpen(!drawerOpen)}>
@@ -41,10 +41,10 @@ export default function Layout() {
         <div className="pl-4">
           <Menu onSelect={() => setDrawerOpen(false)} />
         </div>
-        <div className="p-4 overflow-auto rounded bg-slate-100 shadow-lg h-[calc(100%-1rem)] max-h-[calc(100%-1rem)] w-[calc(100%-1rem)] max-w-[calc(100%-1rem)]">
+        <div className="p-4 overflow-auto rounded bg-bg-surface shadow-lg h-[calc(100%-1rem)] max-h-[calc(100%-1rem)] w-[calc(100%-1rem)] max-w-[calc(100%-1rem)]">
           <Outlet />
         </div>
       </div>
     </div>
   );
-} 
+}

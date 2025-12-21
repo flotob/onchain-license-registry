@@ -31,6 +31,7 @@ import "./app.css";
 import { CgPluginLibProvider } from "./context/plugin_lib";
 import { CgDataProvider } from "./context/cg_data";
 import { WindowSizeProvider } from "./context/window_size";
+import { ThemeProvider } from "./context/theme";
 
 // Define local HardHat network
 const hardhat = {
@@ -126,19 +127,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <WindowSizeProvider>
-      <CgPluginLibProvider>
-        <CgDataProvider>
-          <WagmiProvider config={config}>
-            <QueryClientProvider client={queryClient}>
-              <div className="w-[100vw] h-[100vh] max-w-[100vw] max-h-[100vh] overflow-hidden bg-base-200 p-0 m-0">
-                <Outlet />
-              </div>
-            </QueryClientProvider>
-          </WagmiProvider>
-        </CgDataProvider>
-      </CgPluginLibProvider>
-    </WindowSizeProvider>
+    <ThemeProvider>
+      <WindowSizeProvider>
+        <CgPluginLibProvider>
+          <CgDataProvider>
+            <WagmiProvider config={config}>
+              <QueryClientProvider client={queryClient}>
+                <div className="w-[100vw] h-[100vh] max-w-[100vw] max-h-[100vh] overflow-hidden bg-bg-base p-0 m-0">
+                  <Outlet />
+                </div>
+              </QueryClientProvider>
+            </WagmiProvider>
+          </CgDataProvider>
+        </CgPluginLibProvider>
+      </WindowSizeProvider>
+    </ThemeProvider>
   );
 }
 

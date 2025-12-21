@@ -45,11 +45,11 @@ export default function Home() {
 
   return (<div className="flex flex-col gap-4 flex-1">
     <h2>Hello there :)</h2>
-    <p>This is a sample plugin for Common Ground. It demonstrates how to use the plugin library to navigate and interact with the platform.</p>
+    <p className="text-text-secondary">This is a sample plugin for Common Ground. It demonstrates how to use the plugin library to navigate and interact with the platform.</p>
 
-    <div className="bg-white rounded-lg shadow-md p-4">
+    <div className="bg-bg-elevated rounded-lg shadow-md p-4">
       <h2>User Info</h2>
-      <p>Here's the available user information (for more data, be sure to allow more permissions for this plugin):</p>
+      <p className="text-text-secondary">Here's the available user information (for more data, be sure to allow more permissions for this plugin):</p>
 
       <TableRoot>
         <Table>
@@ -115,9 +115,9 @@ export default function Home() {
       </TableRoot>
     </div>
 
-    <div className="bg-white rounded-lg shadow-md p-4">
+    <div className="bg-bg-elevated rounded-lg shadow-md p-4">
       <h2>Community Info</h2>
-      <p>Here's the available community information:</p>
+      <p className="text-text-secondary">Here's the available community information:</p>
       <TableRoot>
         <Table>
           <TableHead>
@@ -170,9 +170,9 @@ export default function Home() {
       </TableRoot>
     </div>
 
-    <div className="bg-white rounded-lg shadow-md p-4">
+    <div className="bg-bg-elevated rounded-lg shadow-md p-4">
       <h2>Role Management</h2>
-      <p>Here you can see the roles you have and assign new roles if available. For this to work, you will need to assign on the community settings which roles are able to be given.</p>
+      <p className="text-text-secondary">Here you can see the roles you have and assign new roles if available. For this to work, you will need to assign on the community settings which roles are able to be given.</p>
 
       <TableRoot>
         <Table>
@@ -203,9 +203,9 @@ export default function Home() {
       </TableRoot>
     </div>
 
-    <div className="bg-white rounded-lg shadow-md p-4">
+    <div className="bg-bg-elevated rounded-lg shadow-md p-4">
       <h2>User Friends</h2>
-      <p>If the permission is asked and given, you may also see the user friends on a plugin.</p>
+      <p className="text-text-secondary">If the permission is asked and given, you may also see the user friends on a plugin.</p>
 
       {friends?.friends ? (<TableRoot>
         <Table>
@@ -228,7 +228,7 @@ export default function Home() {
           </TableBody>
         </Table>
       </TableRoot>) : (
-        <div className="bg-gray-100 p-4 rounded-lg text-sm text-gray-600">
+        <div className="bg-bg-muted p-4 rounded-lg text-sm text-text-muted">
           No friends data available. Please request permission to access friends or try adding someone on CG.
         </div>
       )}

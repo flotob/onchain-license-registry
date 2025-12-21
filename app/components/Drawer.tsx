@@ -1,4 +1,5 @@
 // Tremor Drawer [v1.0.0]
+// Updated to use semantic color tokens for dark/light mode support
 
 import * as React from "react"
 import * as DrawerPrimitives from "@radix-ui/react-dialog"
@@ -50,7 +51,7 @@ const DrawerOverlay = React.forwardRef<
         // base
         "fixed inset-0 z-50 overflow-y-auto",
         // background color
-        "bg-black/30",
+        "bg-overlay-light",
         // transition
         "data-[state=closed]:animate-hide data-[state=open]:animate-dialog-overlay-show",
         className,
@@ -79,9 +80,9 @@ const DrawerContent = React.forwardRef<
             // base
             "fixed inset-y-2 z-50 mx-auto flex w-[95vw] flex-1 flex-col overflow-y-auto rounded-md border p-4 shadow-lg focus:outline-hidden max-sm:inset-x-2 sm:inset-y-2 sm:right-2 sm:max-w-lg sm:p-6",
             // border color
-            "border-gray-200",
+            "border-border",
             // background color
-            "bg-white",
+            "bg-bg-surface",
             // transition
             "data-[state=closed]:animate-drawer-slide-right-and-fade data-[state=open]:animate-drawer-slide-left-and-fade",
             focusRing,
@@ -103,7 +104,7 @@ const DrawerHeader = React.forwardRef<
   return (
     <div
       ref={ref}
-      className="flex items-start justify-between gap-x-4 border-b border-gray-200 pb-4"
+      className="flex items-start justify-between gap-x-4 border-b border-border pb-4"
       {...props}
     >
       <div className={cx("mt-1 flex flex-col gap-y-1", className)}>
@@ -112,7 +113,7 @@ const DrawerHeader = React.forwardRef<
       <DrawerPrimitives.Close asChild>
         <Button
           variant="ghost"
-          className="aspect-square p-1 hover:bg-gray-100"
+          className="aspect-square p-1 hover:bg-bg-elevated"
         >
           <RiCloseLine className="size-6" aria-hidden="true" />
         </Button>
@@ -133,7 +134,7 @@ const DrawerTitle = React.forwardRef<
       // base
       "text-base font-semibold",
       // text color
-      "text-gray-900",
+      "text-text-primary",
       className,
     )}
     {...props}
@@ -157,7 +158,7 @@ const DrawerDescription = React.forwardRef<
   return (
     <DrawerPrimitives.Description
       ref={forwardedRef}
-      className={cx("text-gray-500", className)}
+      className={cx("text-text-muted", className)}
       {...props}
     />
   )
@@ -172,7 +173,7 @@ const DrawerFooter = ({
   return (
     <div
       className={cx(
-        "flex flex-col-reverse border-t border-gray-200 pt-4 sm:flex-row sm:justify-end sm:space-x-2",
+        "flex flex-col-reverse border-t border-border pt-4 sm:flex-row sm:justify-end sm:space-x-2",
         className,
       )}
       {...props}

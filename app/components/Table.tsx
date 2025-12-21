@@ -1,5 +1,5 @@
 // Tremor Table [v1.0.0]
-// Edited to remove all dark mode styles and ensure light mode compatibility
+// Updated to use semantic color tokens for dark/light mode support
 
 import React from "react"
 
@@ -37,7 +37,7 @@ const Table = React.forwardRef<
       // base
       "w-full caption-bottom border-b",
       // border color
-      "border-gray-200",
+      "border-border",
       className,
     )}
     {...props}
@@ -65,9 +65,9 @@ const TableHeaderCell = React.forwardRef<
       // base
       "border-b px-4 py-3.5 text-left text-sm font-semibold",
       // text color
-      "text-gray-900",
+      "text-text-primary",
       // border color
-      "border-gray-200",
+      "border-border",
       className,
     )}
     {...props}
@@ -86,7 +86,7 @@ const TableBody = React.forwardRef<
       // base
       "divide-y",
       // divide color
-      "divide-gray-200",
+      "divide-border",
       className,
     )}
     {...props}
@@ -122,7 +122,7 @@ const TableCell = React.forwardRef<
       // base
       "p-4 text-sm",
       // text color
-      "text-gray-600",
+      "text-text-secondary",
       className,
     )}
     {...props}
@@ -142,9 +142,9 @@ const TableFoot = React.forwardRef<
         // base
         "border-t text-left font-medium",
         // text color
-        "text-gray-900",
+        "text-text-primary",
         // border color
-        "border-gray-200",
+        "border-border",
         className,
       )}
       {...props}
@@ -164,7 +164,7 @@ const TableCaption = React.forwardRef<
       // base
       "mt-3 px-3 text-center text-sm",
       // text color
-      "text-gray-500",
+      "text-text-muted",
       className,
     )}
     {...props}

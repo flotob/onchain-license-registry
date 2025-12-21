@@ -1,4 +1,5 @@
 // Tremor Select [v1.0.0]
+// Updated to use semantic color tokens for dark/light mode support
 
 import React from "react"
 import * as SelectPrimitives from "@radix-ui/react-select"
@@ -25,20 +26,18 @@ const selectTriggerStyles = [
     // base
     "group/trigger flex w-full select-none items-center justify-between gap-2 truncate rounded-md border px-3 py-2 shadow-xs outline-hidden transition sm:text-sm",
     // border color
-    "border-gray-300",
+    "border-border-strong",
     // text color
-    "text-gray-900",
+    "text-text-primary",
     // placeholder
-    "data-placeholder:text-gray-500",
+    "data-placeholder:text-text-muted",
     // background color
-    "bg-white",
+    "bg-bg-surface",
     // hover
-    "hover:bg-gray-50",
+    "hover:bg-bg-elevated",
     // disabled
-    "data-disabled:bg-gray-100 data-disabled:text-gray-400",
+    "data-disabled:bg-bg-muted data-disabled:opacity-50",
     focusInput,
-    // invalid (optional)
-    // "aria-invalid:ring-2 aria-invalid:ring-red-200 aria-invalid:border-red-500 invalid:ring-2 invalid:ring-red-200 invalid:border-red-500"
   ),
 ]
 
@@ -66,9 +65,9 @@ const SelectTrigger = React.forwardRef<
             // base
             "size-4 shrink-0",
             // text color
-            "text-gray-400",
+            "text-text-muted",
             // disabled
-            "group-data-disabled/trigger:text-gray-300",
+            "group-data-disabled/trigger:opacity-50",
           )}
         />
       </SelectPrimitives.Icon>
@@ -139,14 +138,13 @@ const SelectContent = React.forwardRef<
           // heights
           "max-h-(--radix-select-content-available-height)",
           // background color
-          "bg-white",
+          "bg-bg-surface",
           // text color
-          "text-gray-900",
+          "text-text-primary",
           // border color
-          "border-gray-200",
+          "border-border",
           // transition
           "will-change-[transform,opacity]",
-          // "data-[state=open]:animate-slide-down-and-fade",
           "data-[state=closed]:animate-hide",
           "data-[side=bottom]:animate-slide-down-and-fade data-[side=left]:animate-slide-left-and-fade data-[side=right]:animate-slide-right-and-fade data-[side=top]:animate-slide-up-and-fade",
           className,
@@ -184,7 +182,7 @@ const SelectGroupLabel = React.forwardRef<
       // base
       "px-3 py-2 text-xs font-medium tracking-wide",
       // text color
-      "text-gray-500",
+      "text-text-muted",
       className,
     )}
     {...props}
@@ -204,13 +202,13 @@ const SelectItem = React.forwardRef<
         // base
         "grid cursor-pointer grid-cols-[1fr_20px] gap-x-2 rounded-sm px-3 py-2 outline-hidden transition-colors data-[state=checked]:font-semibold sm:text-sm",
         // text color
-        "text-gray-900",
+        "text-text-primary",
         // disabled
-        "data-disabled:pointer-events-none data-disabled:text-gray-400 data-disabled:hover:bg-none",
+        "data-disabled:pointer-events-none data-disabled:opacity-50",
         // focus
-        "focus-visible:bg-gray-100",
+        "focus-visible:bg-bg-elevated",
         // hover
-        "hover:bg-gray-100",
+        "hover:bg-bg-elevated",
         className,
       )}
       {...props}
@@ -220,7 +218,7 @@ const SelectItem = React.forwardRef<
       </SelectPrimitives.ItemText>
       <SelectPrimitives.ItemIndicator>
         <RiCheckLine
-          className="size-5 shrink-0 text-gray-800"
+          className="size-5 shrink-0 text-text-primary"
           aria-hidden="true"
         />
       </SelectPrimitives.ItemIndicator>
@@ -240,7 +238,7 @@ const SelectSeparator = React.forwardRef<
       // base
       "-mx-1 my-1 h-px",
       // background color
-      "bg-gray-300",
+      "bg-border-strong",
       className,
     )}
     {...props}

@@ -14,13 +14,13 @@ export default function Menu(props: Props) {
     const location = useLocation();
 
     return <nav className="flex flex-col gap-2">
-        <div className="bg-slate-100 p-2 rounded self-start gap-1 w-full shadow-lg">
+        <div className="bg-bg-surface p-2 rounded self-start gap-1 w-full shadow-lg">
             <NavLink
                 to="/"
                 className={({ isActive }) => 
                     isActive 
-                        ? "flex flex-row gap-2 items-center rounded py-2 px-4 bg-blue-500 text-white" 
-                        : "flex flex-row gap-2 items-center rounded py-2 px-4 hover:bg-blue-100"
+                        ? "flex flex-row gap-2 items-center rounded py-2 px-4 bg-accent text-text-inverted" 
+                        : "flex flex-row gap-2 items-center rounded py-2 px-4 text-text-primary hover:bg-bg-elevated"
                 }
                 onClick={onSelect}
             >
@@ -28,14 +28,14 @@ export default function Menu(props: Props) {
                 Home
             </NavLink>
         </div>
-        {isAdmin && <div className="bg-slate-100 p-2 rounded self-start gap-1 w-full shadow-lg">
+        {isAdmin && <div className="bg-bg-surface p-2 rounded self-start gap-1 w-full shadow-lg">
             <Divider className="mt-1 mb-2">Admin</Divider>
             <NavLink
                 to="/admin"
                 className={({ isActive }) => 
                     isActive 
-                        ? "flex flex-row gap-2 items-center rounded py-2 px-4 bg-blue-500 text-white" 
-                        : "flex flex-row gap-2 items-center rounded py-2 px-4 hover:bg-blue-100"
+                        ? "flex flex-row gap-2 items-center rounded py-2 px-4 bg-accent text-text-inverted" 
+                        : "flex flex-row gap-2 items-center rounded py-2 px-4 text-text-primary hover:bg-bg-elevated"
                 }
                 onClick={onSelect}
             >

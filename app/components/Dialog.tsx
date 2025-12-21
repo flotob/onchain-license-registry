@@ -1,5 +1,5 @@
 // Tremor Dialog [v1.0.0]
-// Edited to remove all dark mode styles and ensure light mode compatibility
+// Updated to use semantic color tokens for dark/light mode support
 
 import React from "react"
 import * as DialogPrimitives from "@radix-ui/react-dialog"
@@ -36,7 +36,7 @@ const DialogOverlay = React.forwardRef<
         // base
         "fixed inset-0 z-50 overflow-y-auto",
         // background color
-        "bg-black/70",
+        "bg-overlay",
         // transition
         "data-[state=open]:animate-dialog-overlay-show",
         className,
@@ -61,9 +61,9 @@ const DialogContent = React.forwardRef<
             // base
             "fixed left-1/2 top-1/2 z-50 w-[95vw] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-md border p-6 shadow-lg",
             // border color
-            "border-gray-200",
+            "border-border",
             // background color
-            "bg-white",
+            "bg-bg-surface",
             // transition
             "data-[state=open]:animate-dialog-content-show",
             focusRing,
@@ -98,7 +98,7 @@ const DialogTitle = React.forwardRef<
       // base
       "text-lg font-semibold",
       // text color
-      "text-gray-900",
+      "text-text-primary",
       className,
     )}
     {...props}
@@ -114,7 +114,7 @@ const DialogDescription = React.forwardRef<
   return (
     <DialogPrimitives.Description
       ref={forwardedRef}
-      className={cx("text-gray-500", className)}
+      className={cx("text-text-muted", className)}
       {...props}
     />
   )
