@@ -31,19 +31,6 @@ export interface ContentReference {
 // ============================================
 
 /**
- * Signature on a license entry.
- * Uses EIP-712 typed data signing for wallet compatibility.
- */
-export interface EntrySignature {
-  /** Signature type (always "eip712" for now) */
-  type: "eip712";
-  /** Signer's Ethereum address */
-  signer: string;
-  /** Hex-encoded signature */
-  sig: string;
-}
-
-/**
  * License information within an entry.
  */
 export interface LicenseInfo {
@@ -69,6 +56,9 @@ export interface GovernanceInfo {
 /**
  * A single entry in the license registry.
  * Forms a hash-chain for tamper-evidence (each entry links to the previous).
+ * 
+ * Trust model: Authorization comes from the DAO governance vote that updates
+ * the ENS contenthash. The on-chain transaction IS the proof of authorization.
  */
 export interface LicenseEntry {
   /** Schema identifier for versioning */
@@ -85,8 +75,6 @@ export interface LicenseEntry {
   governance?: GovernanceInfo;
   /** Reference to previous entry (null for genesis entry) */
   prev_entry_ref: ContentReference | null;
-  /** Signatures from authorized signers */
-  signatures: EntrySignature[];
 }
 
 // ============================================

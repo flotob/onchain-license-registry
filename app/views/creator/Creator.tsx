@@ -2,12 +2,10 @@
  * Creator View
  * 
  * Main page for creating new license registry entries.
+ * No wallet connection required - trust comes from DAO governance.
  */
 
 import { useState } from "react";
-import { useAccount, useConnect } from "wagmi";
-import { Button } from "~/components/Button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "~/components/Dialog";
 import type { LicenseEntry, ContentReference } from "~/types/license-registry";
 import { useRegistry } from "~/hooks/use-registry";
 import { EntryForm } from "./EntryForm";
@@ -55,63 +53,8 @@ function RegistryNameInput({
   );
 }
 
-/**
- * Connect wallet prompt.
- */
-function ConnectWalletPrompt() {
-  const { connect, connectors } = useConnect();
-  const installedWallets = connectors.filter(c => c.type === "injected");
-
-  return (
-    <div className="bg-bg-surface border border-border rounded-lg p-8 text-center">
-      <svg
-        className="w-16 h-16 mx-auto text-text-muted mb-4"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-        />
-      </svg>
-      <h3 className="text-xl font-semibold text-text-primary mb-2">
-        Connect Your Wallet
-      </h3>
-      <p className="text-text-secondary mb-6">
-        You need to connect a wallet to sign license entries.
-      </p>
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button>Connect Wallet</Button>
-        </DialogTrigger>
-        <DialogContent className="w-fit">
-          <DialogHeader>
-            <DialogTitle>Choose a wallet to connect</DialogTitle>
-          </DialogHeader>
-          <DialogFooter>
-            <div className="flex flex-col gap-2 w-full pt-4">
-              {installedWallets.map(c => (
-                <Button key={c.id} variant="primary" className="w-full" onClick={() => connect({ connector: c })}>
-                  {c.name}
-                </Button>
-              ))}
-              <DialogClose asChild>
-                <Button variant="secondary" className="w-full">Close</Button>
-              </DialogClose>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
 export function Creator() {
-  const { isConnected } = useAccount();
-  const { state: registryState, entryChain, contentRef } = useRegistry();
+  const { state: registryState, contentRef } = useRegistry();
   
   const [creatorState, setCreatorState] = useState<CreatorState>({ step: "form" });
   const [registryName, setRegistryName] = useState("Common Ground License Registry");
@@ -216,13 +159,8 @@ export function Creator() {
         </div>
       )}
 
-      {/* Wallet Connection Check */}
-      {!isConnected && creatorState.step === "form" && (
-        <ConnectWalletPrompt />
-      )}
-
       {/* Main Content */}
-      {isConnected && creatorState.step === "form" && (
+      {creatorState.step === "form" && (
         <div className="space-y-6">
           {/* Registry Name (for genesis) */}
           {registryState.status !== "loaded" && (
@@ -286,4 +224,3 @@ export function Creator() {
 }
 
 export default Creator;
-

@@ -145,29 +145,6 @@ export function LicenseEntryCard({
           </div>
         )}
 
-        {/* Signatures */}
-        <div>
-          <h4 className="text-sm font-medium text-text-secondary mb-2">
-            Signatures ({entry.signatures.length})
-          </h4>
-          <div className="space-y-1">
-            {entry.signatures.map((sig, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-2 text-sm bg-bg-elevated rounded px-2 py-1.5"
-              >
-                <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-                <span className="font-mono text-text-secondary truncate">
-                  {sig.signer}
-                </span>
-              </div>
-            ))}
-            {entry.signatures.length === 0 && (
-              <p className="text-sm text-text-muted italic">No signatures</p>
-            )}
-          </div>
-        </div>
-
         {/* Previous Entry Reference */}
         {entry.prev_entry_ref && (
           <div className="pt-2 border-t border-border">

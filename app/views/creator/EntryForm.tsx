@@ -2,23 +2,22 @@
  * EntryForm Component
  * 
  * Form for creating new license registry entries.
+ * No wallet connection required - trust comes from DAO governance.
  */
 
 import { useState, useCallback, useRef } from "react";
-import { useAccount, useSignTypedData } from "wagmi";
 import { Button } from "~/components/Button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/Select";
 import type { LicenseEntry, LicenseInfo, GovernanceInfo, ContentReference } from "~/types/license-registry";
 import { COMMON_SPDX_LICENSES } from "~/types/license-registry";
 import { sha256, hashFileWithContent, hashBinaryFile } from "~/lib/hash";
-import { prepareEntryForSigning, createUnsignedEntry, formatSignature } from "~/lib/eip712";
 
 interface EntryFormProps {
   /** Previous entry reference (null for genesis entry) */
   prevEntryRef: ContentReference | null;
   /** Current version number (new entry will be version + 1) */
   currentVersion: number;
-  /** Callback when entry is successfully created and signed */
+  /** Callback when entry is successfully created */
   onEntryCreated: (entry: LicenseEntry, files: {
     licenseText: string;
     licenseFileName: string;
@@ -49,9 +48,6 @@ export function EntryForm({
   onEntryCreated,
   defaultLicense,
 }: EntryFormProps) {
-  const { address, isConnected } = useAccount();
-  const { signTypedDataAsync } = useSignTypedData();
-  
   const licenseInputRef = useRef<HTMLInputElement>(null);
   const governanceInputRef = useRef<HTMLInputElement>(null);
 
@@ -68,8 +64,7 @@ export function EntryForm({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [signing, setSigning] = useState(false);
-  const [signError, setSignError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   // Get the actual SPDX ID (custom or selected)
   const actualSpdxId = form.spdxId === "custom" ? form.customSpdx : form.spdxId;
@@ -143,15 +138,10 @@ export function EntryForm({
   // Handle form submission
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    setSignError(null);
 
     if (!validate()) return;
-    if (!address) {
-      setSignError("Please connect your wallet to sign the entry");
-      return;
-    }
 
-    setSigning(true);
+    setCreating(true);
 
     try {
       // Calculate hashes
@@ -173,50 +163,34 @@ export function EntryForm({
         text_sha256: licenseHash,
       };
 
-      // Create unsigned entry
-      const unsignedEntry = createUnsignedEntry({
+      // Create entry
+      const entry: LicenseEntry = {
+        schema: "commonground-license-entry/v1",
         version: currentVersion + 1,
-        effectiveDate: form.effectiveDate,
+        created_at: new Date().toISOString(),
+        effective_date: form.effectiveDate,
         license: licenseInfo,
         governance: governanceInfo,
-        prevEntryRef,
-      });
-
-      // Prepare for signing
-      const typedData = prepareEntryForSigning(unsignedEntry);
-
-      // Sign with wallet
-      const signature = await signTypedDataAsync({
-        domain: typedData.domain,
-        types: typedData.types,
-        primaryType: typedData.primaryType,
-        message: typedData.message,
-      });
-
-      // Create complete entry with signature
-      const signedEntry: LicenseEntry = {
-        ...unsignedEntry,
-        signatures: [formatSignature(address, signature)],
+        prev_entry_ref: prevEntryRef,
       };
 
       // Call the callback
-      onEntryCreated(signedEntry, {
+      onEntryCreated(entry, {
         licenseText: form.licenseText,
         licenseFileName: form.licenseFileName,
         governanceDoc: form.governanceDoc ?? undefined,
         governanceFileName: form.governanceFileName || undefined,
       });
     } catch (error) {
-      console.error("Failed to sign entry:", error);
-      setSignError(
-        error instanceof Error 
-          ? error.message 
-          : "Failed to sign entry. Please try again."
-      );
+      console.error("Failed to create entry:", error);
+      setErrors(prev => ({
+        ...prev,
+        submit: error instanceof Error ? error.message : "Failed to create entry",
+      }));
     } finally {
-      setSigning(false);
+      setCreating(false);
     }
-  }, [validate, address, form, actualSpdxId, currentVersion, prevEntryRef, signTypedDataAsync, onEntryCreated]);
+  }, [validate, form, actualSpdxId, currentVersion, prevEntryRef, onEntryCreated]);
 
   const newVersion = currentVersion + 1;
   const isGenesisEntry = prevEntryRef === null;
@@ -225,28 +199,15 @@ export function EntryForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Header */}
       <div className="bg-bg-surface border border-border rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-text-primary">
-              {isGenesisEntry ? "Create Genesis Entry" : `Create Version ${newVersion}`}
-            </h3>
-            <p className="text-sm text-text-muted">
-              {isGenesisEntry 
-                ? "This will be the first entry in the registry"
-                : `Building on version ${currentVersion}`
-              }
-            </p>
-          </div>
-          <div className="text-right">
-            {isConnected ? (
-              <div className="text-sm text-text-secondary">
-                Signing as <span className="font-mono text-accent">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-              </div>
-            ) : (
-              <div className="text-sm text-red-500">Wallet not connected</div>
-            )}
-          </div>
-        </div>
+        <h3 className="text-lg font-semibold text-text-primary">
+          {isGenesisEntry ? "Create Genesis Entry" : `Create Version ${newVersion}`}
+        </h3>
+        <p className="text-sm text-text-muted mt-1">
+          {isGenesisEntry 
+            ? "This will be the first entry in the registry"
+            : `Building on version ${currentVersion}`
+          }
+        </p>
       </div>
 
       {/* License Selection */}
@@ -388,32 +349,23 @@ export function EntryForm({
         )}
       </div>
 
-      {/* Sign Error */}
-      {signError && (
+      {/* Submit Error */}
+      {errors.submit && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-          <p className="text-sm text-red-500">{signError}</p>
+          <p className="text-sm text-red-500">{errors.submit}</p>
         </div>
       )}
 
       {/* Submit */}
-      <div className="flex gap-3">
-        <Button
-          type="submit"
-          disabled={!isConnected || signing}
-          className="flex-1"
-        >
-          {signing ? "Signing..." : "Sign & Create Entry"}
-        </Button>
-      </div>
-
-      {!isConnected && (
-        <p className="text-sm text-text-muted text-center">
-          Connect your wallet to sign and create an entry
-        </p>
-      )}
+      <Button
+        type="submit"
+        disabled={creating}
+        className="w-full"
+      >
+        {creating ? "Creating..." : "Create Entry"}
+      </Button>
     </form>
   );
 }
 
 export default EntryForm;
-

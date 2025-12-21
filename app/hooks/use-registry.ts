@@ -245,17 +245,9 @@ export function useEntryVerification(
         }
       }
 
-      // Check 4: Signatures present
-      checks.push({
-        id: "signatures",
-        description: "Entry has at least one signature",
-        passed: entry.signatures.length > 0,
-        error: entry.signatures.length === 0 ? "No signatures on entry" : undefined,
-        details: `${entry.signatures.length} signature(s) present`,
-      });
-
-      // TODO: Check 5: Verify actual signatures (requires wallet connection)
-      // This would use viem's verifyTypedData
+      // Note: No signature verification needed.
+      // Trust comes from the DAO governance vote that updates the ENS contenthash.
+      // The on-chain transaction IS the proof of authorization.
 
       setResult({
         valid: checks.every(c => c.passed),
