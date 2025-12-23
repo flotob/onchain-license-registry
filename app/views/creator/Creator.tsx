@@ -5,9 +5,10 @@
  * No wallet connection required - trust comes from DAO governance.
  */
 
-import { useState } from "react";
-import type { LicenseEntry } from "~/types/license-registry";
+import { useState, useEffect, useCallback } from "react";
+import type { LicenseEntry, ContentReference } from "~/types/license-registry";
 import { useRegistry } from "~/hooks/use-registry";
+import { getIpfsGateway } from "~/lib/storage";
 import { EntryForm } from "./EntryForm";
 import { Publisher } from "./Publisher";
 
@@ -48,17 +49,72 @@ function RegistryNameInput({
   );
 }
 
+/**
+ * Fetch license text for an entry from IPFS or ENS gateway.
+ */
+async function fetchLicenseText(
+  entry: LicenseEntry, 
+  contentRef: ContentReference | null
+): Promise<string | null> {
+  if (!contentRef) return null;
+  
+  try {
+    if (contentRef.protocol === "ens") {
+      // Fetch via ENS gateway
+      const url = `https://${contentRef.hash}.limo${entry.license.text_path}`;
+      const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
+      if (!response.ok) return null;
+      return response.text();
+    } else {
+      // Fetch via IPFS gateway
+      const ipfs = getIpfsGateway();
+      return await ipfs.fetchTextFromDir(contentRef.hash, entry.license.text_path);
+    }
+  } catch (error) {
+    console.error(`Failed to fetch license for v${entry.version}:`, error);
+    return null;
+  }
+}
+
 export function Creator() {
-  const { state: registryState, contentRef } = useRegistry();
+  const { state: registryState, entryChain, contentRef } = useRegistry();
   
   const [creatorState, setCreatorState] = useState<CreatorState>({ step: "form" });
   const [registryName, setRegistryName] = useState("Common Ground License Registry");
   const [registryDescription, setRegistryDescription] = useState("");
+  
+  // Previous entries and their license texts (fetched from existing registry)
+  const [previousLicenses, setPreviousLicenses] = useState<Map<number, string>>(new Map());
+  const [fetchingLicenses, setFetchingLicenses] = useState(false);
 
   // Determine current version
   const currentVersion = registryState.status === "loaded" 
     ? registryState.manifest.current_version 
     : 0;
+
+  // Fetch license texts for all entries when registry is loaded
+  useEffect(() => {
+    async function fetchAllLicenses() {
+      if (registryState.status !== "loaded" || !contentRef || entryChain.length === 0) {
+        return;
+      }
+      
+      setFetchingLicenses(true);
+      const licenses = new Map<number, string>();
+      
+      for (const entry of entryChain) {
+        const text = await fetchLicenseText(entry, contentRef);
+        if (text) {
+          licenses.set(entry.version, text);
+        }
+      }
+      
+      setPreviousLicenses(licenses);
+      setFetchingLicenses(false);
+    }
+    
+    fetchAllLicenses();
+  }, [registryState.status, contentRef, entryChain]);
 
   // Handle entry creation
   const handleEntryCreated = (entry: LicenseEntry, licenseText: string) => {
@@ -102,7 +158,7 @@ export function Creator() {
 
       {/* Existing Registry Info */}
       {registryState.status === "loaded" && (
-        <div className="bg-bg-elevated border border-border rounded-lg p-4">
+        <div className="bg-bg-elevated border border-border rounded-lg p-4 space-y-2">
           <div className="flex items-center gap-2 text-sm">
             <span className="text-text-secondary">Building on:</span>
             <span className="font-medium text-text-primary">
@@ -112,6 +168,27 @@ export function Creator() {
             <span className="text-text-muted font-mono">
               {registryState.currentEntry.license.spdx}
             </span>
+          </div>
+          
+          {/* Previous entries status */}
+          <div className="text-xs text-text-muted">
+            {fetchingLicenses ? (
+              <span className="flex items-center gap-1">
+                <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Fetching previous entries...
+              </span>
+            ) : previousLicenses.size > 0 ? (
+              <span className="text-green-600">
+                ✓ {previousLicenses.size} previous {previousLicenses.size === 1 ? 'entry' : 'entries'} will be included in package
+              </span>
+            ) : entryChain.length > 0 ? (
+              <span className="text-yellow-600">
+                ⚠ Could not fetch previous license texts (CORS issue)
+              </span>
+            ) : null}
           </div>
         </div>
       )}
@@ -198,6 +275,8 @@ export function Creator() {
               ? registryState.manifest.description
               : registryDescription || undefined
           }
+          previousEntries={entryChain}
+          previousLicenses={previousLicenses}
           onBack={handleBack}
         />
       )}

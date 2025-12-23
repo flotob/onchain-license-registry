@@ -19,6 +19,10 @@ interface PublisherProps {
   registryName: string;
   /** Optional registry description */
   registryDescription?: string;
+  /** Previous entries to include in the package */
+  previousEntries?: LicenseEntry[];
+  /** Previous license texts keyed by version */
+  previousLicenses?: Map<number, string>;
   /** Callback to go back to form */
   onBack: () => void;
   /** Callback when published successfully */
@@ -30,6 +34,8 @@ export function Publisher({
   licenseText,
   registryName,
   registryDescription,
+  previousEntries,
+  previousLicenses,
   onBack,
   onPublished,
 }: PublisherProps) {
@@ -47,6 +53,8 @@ export function Publisher({
         description: registryDescription,
         newEntry: entry,
         licenseText,
+        previousEntries,
+        previousLicenses,
       });
 
       const filename = generatePackageFilename(registryName, entry.version);
@@ -59,7 +67,7 @@ export function Publisher({
     } finally {
       setDownloading(false);
     }
-  }, [entry, licenseText, registryName, registryDescription, onPublished]);
+  }, [entry, licenseText, registryName, registryDescription, previousEntries, previousLicenses, onPublished]);
 
   return (
     <div className="space-y-6">
