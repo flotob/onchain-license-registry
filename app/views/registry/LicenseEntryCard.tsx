@@ -7,6 +7,7 @@
 import type { LicenseEntry, ContentReference } from "~/types/license-registry";
 import { COMMON_SPDX_LICENSES } from "~/types/license-registry";
 import { getContentUrl } from "~/lib/storage";
+import { useCgPluginLib } from "~/context/plugin_lib";
 
 interface LicenseEntryCardProps {
   entry: LicenseEntry;
@@ -53,6 +54,7 @@ export function LicenseEntryCard({
   isHead = false,
   onViewLicense,
 }: LicenseEntryCardProps) {
+  const cgPluginLib = useCgPluginLib();
   const licenseName = getLicenseName(entry.license.spdx);
   const effectiveDate = formatDate(entry.effective_date);
 
@@ -60,6 +62,17 @@ export function LicenseEntryCard({
   const licenseUrl = contentRef
     ? `${getContentUrl(contentRef)}${entry.license.text_path.startsWith("/") ? "" : "/"}${entry.license.text_path}`
     : null;
+
+  // Handle external link navigation (required for iframe sandbox)
+  const handleViewLicense = async () => {
+    if (!licenseUrl) return;
+    if (cgPluginLib) {
+      await cgPluginLib.navigate(licenseUrl);
+    } else {
+      // Fallback for development outside iframe
+      window.open(licenseUrl, "_blank");
+    }
+  };
 
   return (
     <div className="bg-bg-surface border border-border rounded-lg overflow-hidden">
@@ -91,14 +104,12 @@ export function LicenseEntryCard({
               <p className="text-sm text-text-muted font-mono">{entry.license.spdx}</p>
             </div>
             {licenseUrl && (
-              <a
-                href={licenseUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={handleViewLicense}
                 className="text-sm text-accent hover:text-accent-hover transition-colors"
               >
                 View License →
-              </a>
+              </button>
             )}
           </div>
           

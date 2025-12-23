@@ -9,6 +9,7 @@ import { Button } from "~/components/Button";
 import type { LicenseEntry } from "~/types/license-registry";
 import { createRegistryPackage, downloadBlob, generatePackageFilename } from "~/lib/publisher";
 import { LicenseEntryCard } from "~/views/registry/LicenseEntryCard";
+import { useCgPluginLib } from "~/context/plugin_lib";
 
 interface PublisherProps {
   /** The entry to publish */
@@ -39,9 +40,20 @@ export function Publisher({
   onBack,
   onPublished,
 }: PublisherProps) {
+  const cgPluginLib = useCgPluginLib();
   const [downloading, setDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Handle external link navigation (required for iframe sandbox)
+  const handleExternalLink = useCallback(async (url: string) => {
+    if (cgPluginLib) {
+      await cgPluginLib.navigate(url);
+    } else {
+      // Fallback for development outside iframe
+      window.open(url, "_blank");
+    }
+  }, [cgPluginLib]);
 
   const handleDownload = useCallback(async () => {
     setDownloading(true);
@@ -178,39 +190,33 @@ export function Publisher({
       <div className="bg-bg-surface border border-border rounded-lg p-4 space-y-3">
         <h4 className="text-sm font-medium text-text-primary">IPFS Upload Services</h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <a
-            href="https://web3.storage"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => handleExternalLink("https://web3.storage")}
             className="flex items-center gap-2 px-3 py-2 bg-bg-elevated rounded-lg hover:bg-bg-muted transition-colors text-sm text-text-secondary"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
             web3.storage
-          </a>
-          <a
-            href="https://pinata.cloud"
-            target="_blank"
-            rel="noopener noreferrer"
+          </button>
+          <button
+            onClick={() => handleExternalLink("https://pinata.cloud")}
             className="flex items-center gap-2 px-3 py-2 bg-bg-elevated rounded-lg hover:bg-bg-muted transition-colors text-sm text-text-secondary"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
             Pinata
-          </a>
-          <a
-            href="https://nft.storage"
-            target="_blank"
-            rel="noopener noreferrer"
+          </button>
+          <button
+            onClick={() => handleExternalLink("https://nft.storage")}
             className="flex items-center gap-2 px-3 py-2 bg-bg-elevated rounded-lg hover:bg-bg-muted transition-colors text-sm text-text-secondary"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
             nft.storage
-          </a>
+          </button>
         </div>
       </div>
     </div>
