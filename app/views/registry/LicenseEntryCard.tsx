@@ -137,38 +137,4 @@ export function LicenseEntryCard({
   );
 }
 
-/**
- * Compact version of the entry card for history view.
- */
-export function LicenseEntryRow({
-  entry,
-  onClick,
-}: {
-  entry: LicenseEntry;
-  onClick?: () => void;
-}) {
-  const licenseName = getLicenseName(entry.license.spdx);
-  const effectiveDate = formatDate(entry.effective_date);
-
-  return (
-    <button
-      onClick={onClick}
-      className="w-full text-left px-4 py-3 bg-bg-surface border border-border rounded-lg hover:bg-bg-elevated transition-colors"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-text-primary">
-            v{entry.version}
-          </span>
-          <span className="text-sm text-text-secondary">
-            {licenseName}
-          </span>
-        </div>
-        <span className="text-sm text-text-muted">
-          {effectiveDate}
-        </span>
-      </div>
-    </button>
-  );
-}
 

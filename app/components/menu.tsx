@@ -1,6 +1,6 @@
 import { NavLink } from "react-router";
 import { FaHome } from "react-icons/fa";
-import { HiPencilAlt } from "react-icons/hi";
+import { HiPencilAlt, HiShieldCheck } from "react-icons/hi";
 import { Divider } from "./Divider";
 
 type Props = {
@@ -38,6 +38,18 @@ export default function Menu(props: Props) {
             >
                 <HiPencilAlt />
                 Create Entry
+            </NavLink>
+            <NavLink
+                to="/verify"
+                className={({ isActive }) => 
+                    isActive 
+                        ? "flex flex-row gap-2 items-center rounded py-2 px-4 bg-accent text-text-inverted" 
+                        : "flex flex-row gap-2 items-center rounded py-2 px-4 text-text-primary hover:bg-bg-elevated"
+                }
+                onClick={onSelect}
+            >
+                <HiShieldCheck />
+                Verify Update
             </NavLink>
         </div>
     </nav>;

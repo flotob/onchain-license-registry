@@ -11,12 +11,9 @@ import type {
   LicenseEntry,
   ContentReference,
   RegistryState,
-  ChainVerificationResult,
-  VerificationCheck,
 } from "~/types/license-registry";
 import { getIpfsGateway } from "~/lib/storage";
 import { getConfiguredEnsName } from "~/lib/ens";
-import { verifyHash } from "~/lib/hash";
 
 /**
  * Resolve ENS name via .limo gateway.
@@ -211,93 +208,3 @@ export function useRegistry(
   };
 }
 
-/**
- * Hook to verify a license entry.
- * 
- * @param entry - The entry to verify
- * @param contentRef - The content reference for fetching files
- */
-export function useEntryVerification(
-  entry: LicenseEntry | null,
-  contentRef: ContentReference | null
-): {
-  verifying: boolean;
-  result: ChainVerificationResult | null;
-  verify: () => Promise<void>;
-} {
-  const [verifying, setVerifying] = useState(false);
-  const [result, setResult] = useState<ChainVerificationResult | null>(null);
-
-  const verify = useCallback(async () => {
-    if (!entry || !contentRef) return;
-
-    setVerifying(true);
-    const checks: VerificationCheck[] = [];
-    const entries: LicenseEntry[] = [];
-
-    try {
-      entries.push(entry);
-
-      // Check 1: Required fields present
-      checks.push({
-        id: "structure",
-        description: "Entry structure is valid",
-        passed: !!(entry.version && entry.effective_date && entry.license),
-        error: !(entry.version && entry.effective_date && entry.license) 
-          ? "Missing required fields" 
-          : undefined,
-      });
-
-      // Check 2: License text hash
-      try {
-        let licenseText: string;
-        
-        if (contentRef.protocol === "ens") {
-          licenseText = await fetchTextFromEnsGateway(contentRef.hash, entry.license.text_path);
-        } else {
-          const ipfs = getIpfsGateway();
-          licenseText = await ipfs.fetchTextFromDir(contentRef.hash, entry.license.text_path);
-        }
-        
-        const hashValid = await verifyHash(licenseText, entry.license.text_sha256);
-        checks.push({
-          id: "license_hash",
-          description: "License text hash matches",
-          passed: hashValid,
-          error: !hashValid ? "License text hash mismatch" : undefined,
-        });
-      } catch (error) {
-        checks.push({
-          id: "license_hash",
-          description: "License text hash matches",
-          passed: false,
-          error: `Failed to fetch license text: ${error}`,
-        });
-      }
-
-      setResult({
-        valid: checks.every(c => c.passed),
-        entryCount: entries.length,
-        checks,
-        entries,
-      });
-    } catch (error) {
-      checks.push({
-        id: "fetch",
-        description: "Registry data fetchable",
-        passed: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-      setResult({
-        valid: false,
-        entryCount: 0,
-        checks,
-        entries: [],
-      });
-    } finally {
-      setVerifying(false);
-    }
-  }, [entry, contentRef]);
-
-  return { verifying, result, verify };
-}
