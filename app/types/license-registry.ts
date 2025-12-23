@@ -12,17 +12,20 @@
 /**
  * Supported decentralized storage protocols.
  * Maps to ENS contenthash codec types (EIP-1577 / ENSIP-7).
+ * 
+ * "ens" is a special value indicating content is accessed via ENS gateway
+ * (e.g., .limo) where the raw CID is not known but the ENS name is.
  */
-export type StorageProtocol = "ipfs" | "ipns" | "bzz" | "ar";
+export type StorageProtocol = "ipfs" | "ipns" | "bzz" | "ar" | "ens";
 
 /**
  * Storage-agnostic content reference.
- * Can represent an IPFS CID, Swarm hash, Arweave TX ID, etc.
+ * Can represent an IPFS CID, Swarm hash, Arweave TX ID, or ENS name.
  */
 export interface ContentReference {
-  /** The storage protocol */
+  /** The storage protocol (or "ens" for ENS gateway access) */
   protocol: StorageProtocol;
-  /** The content hash/identifier (CID for IPFS, 32-byte hash for Swarm, etc.) */
+  /** The content hash/identifier (CID for IPFS, 32-byte hash for Swarm, ENS name for "ens") */
   hash: string;
 }
 

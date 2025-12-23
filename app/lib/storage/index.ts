@@ -28,6 +28,11 @@ export function getGateway(protocol: StorageProtocol): StorageGateway {
       // IPNS uses the same gateways as IPFS
       return getIpfsGateway();
     
+    case "ens":
+      // ENS uses .limo gateway for resolution
+      // This is a special case - not a real storage gateway
+      throw new Error("ENS protocol requires direct gateway access, use getEnsGatewayUrl instead");
+    
     case "bzz":
       // TODO: Implement Swarm gateway
       throw new Error("Swarm (bzz) protocol not yet implemented");
@@ -82,6 +87,11 @@ export async function fetchContentText(ref: ContentReference): Promise<string> {
  * @returns Full URL to access the content
  */
 export function getContentUrl(ref: ContentReference): string {
+  // Special handling for ENS - use .limo gateway
+  if (ref.protocol === "ens") {
+    return `https://${ref.hash}.limo`;
+  }
+  
   const gateway = getGateway(ref.protocol);
   return gateway.getGatewayUrl(ref.hash);
 }
@@ -119,6 +129,7 @@ export function isProtocolSupported(protocol: StorageProtocol): boolean {
   switch (protocol) {
     case "ipfs":
     case "ipns":
+    case "ens":
       return true;
     case "bzz":
     case "ar":
