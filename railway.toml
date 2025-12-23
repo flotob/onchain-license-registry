@@ -1,0 +1,20 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+# Pass VITE_ environment variables as build arguments
+# These are baked into the client bundle at build time
+# Runtime-only vars (PLUGIN_PRIVATE_KEY, COOKIE_SECRET) don't need to be here
+[build.args]
+VITE_CG_DATA_REFRESH_INTERVAL = "${{VITE_CG_DATA_REFRESH_INTERVAL}}"
+VITE_PLUGIN_PUBLIC_KEY = "${{VITE_PLUGIN_PUBLIC_KEY}}"
+VITE_URL_PREFIX = "${{VITE_URL_PREFIX}}"
+VITE_BASE_URL = "${{VITE_BASE_URL}}"
+VITE_LICENSE_ENS_NAME = "${{VITE_LICENSE_ENS_NAME}}"
+VITE_REGISTRY_CID = "${{VITE_REGISTRY_CID}}"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
