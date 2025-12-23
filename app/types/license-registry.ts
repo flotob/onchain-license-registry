@@ -47,18 +47,13 @@ export interface LicenseInfo {
 
 /**
  * A single entry in the license registry.
- * Forms a hash-chain for tamper-evidence (each entry links to the previous).
  * 
  * Trust model: Authorization comes from the DAO governance vote that updates
  * the ENS contenthash. The on-chain transaction IS the proof of authorization.
  */
 export interface LicenseEntry {
-  /** Schema identifier for versioning */
-  schema: "commonground-license-entry/v1";
   /** Version number (1, 2, 3, ...) */
   version: number;
-  /** ISO timestamp when entry was created */
-  created_at: string;
   /** ISO date when the license becomes effective */
   effective_date: string;
   /** License information */
@@ -71,10 +66,10 @@ export interface LicenseEntry {
 
 /**
  * The registry manifest (registry.json).
- * Points to the current head entry and provides metadata.
+ * Contains all entries inline for single-fetch access.
  * 
  * Trust model: The ENS contenthash points to the IPFS directory CID.
- * Use head_entry_path relative to that CID to fetch the current entry.
+ * The registry.json contains all metadata; license texts are separate files.
  */
 export interface RegistryManifest {
   /** Schema identifier for versioning */
@@ -85,8 +80,8 @@ export interface RegistryManifest {
   description?: string;
   /** Current version number (matches head entry version) */
   current_version: number;
-  /** Relative path to head entry file (e.g., "/entries/v1.json") */
-  head_entry_path: string;
+  /** All entries in the registry (ordered by version, newest first) */
+  entries: LicenseEntry[];
 }
 
 // ============================================

@@ -117,11 +117,9 @@ export function EntryForm({
         text_sha256: licenseHash,
       };
 
-      // Create entry
+      // Create entry (no schema or created_at - entries are inline in manifest)
       const entry: LicenseEntry = {
-        schema: "commonground-license-entry/v1",
         version: newVersion,
-        created_at: new Date().toISOString(),
         effective_date: form.effectiveDate,
         license: licenseInfo,
       };

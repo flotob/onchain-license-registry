@@ -17,7 +17,7 @@ export interface RegistryPackageData {
   description?: string;
   /** The new entry to add */
   newEntry: LicenseEntry;
-  /** License text content */
+  /** License text content for the new entry */
   licenseText: string;
   /** Previous entries (for including history) */
   previousEntries?: LicenseEntry[];
@@ -37,21 +37,18 @@ export function getLicenseFilePath(version: number): string {
  * Create a complete registry ZIP package.
  * 
  * Structure:
- * /registry.json       - Manifest pointing to head entry
+ * /registry.json       - Manifest with all entries inline
  * /licenses/v1.md      - License text for version 1
- * /licenses/v2.md      - License text for version 2 (if different)
- * /entries/v1.json     - Entry JSON files
- * /entries/v2.json
+ * /licenses/v2.md      - License text for version 2
  * ...
  */
 export async function createRegistryPackage(data: RegistryPackageData): Promise<Blob> {
   const zip = new JSZip();
   
-  // Create folders
+  // Create licenses folder
   const licensesFolder = zip.folder("licenses");
-  const entriesFolder = zip.folder("entries");
 
-  if (!licensesFolder || !entriesFolder) {
+  if (!licensesFolder) {
     throw new Error("Failed to create ZIP folders");
   }
 
@@ -59,15 +56,14 @@ export async function createRegistryPackage(data: RegistryPackageData): Promise<
   const licenseFileName = `v${data.newEntry.version}.md`;
   licensesFolder.file(licenseFileName, data.licenseText);
 
-  // Add the new entry
-  const entryFileName = `v${data.newEntry.version}.json`;
-  entriesFolder.file(entryFileName, JSON.stringify(data.newEntry, null, 2));
+  // Build entries array (newest first)
+  const allEntries: LicenseEntry[] = [data.newEntry];
 
   // Add previous entries and their licenses if provided
   if (data.previousEntries) {
     for (const entry of data.previousEntries) {
-      const prevEntryFileName = `v${entry.version}.json`;
-      entriesFolder.file(prevEntryFileName, JSON.stringify(entry, null, 2));
+      // Add to entries array
+      allEntries.push(entry);
       
       // Add previous license if available
       if (data.previousLicenses?.has(entry.version)) {
@@ -77,13 +73,16 @@ export async function createRegistryPackage(data: RegistryPackageData): Promise<
     }
   }
 
-  // Create manifest (no head_entry_ref - path is sufficient)
+  // Sort entries by version (newest first)
+  allEntries.sort((a, b) => b.version - a.version);
+
+  // Create manifest with all entries inline
   const manifest: RegistryManifest = {
     schema: "commonground-license-registry/v1",
     name: data.name,
     description: data.description,
     current_version: data.newEntry.version,
-    head_entry_path: `/entries/${entryFileName}`,
+    entries: allEntries,
   };
 
   zip.file("registry.json", JSON.stringify(manifest, null, 2));
@@ -95,14 +94,17 @@ This package contains the license registry for ${data.name}.
 
 ## Structure
 
-- \`registry.json\` - Registry manifest (points to head entry)
-- \`entries/\` - License entry JSON files (v1.json, v2.json, ...)
+- \`registry.json\` - Registry manifest with all entries inline
 - \`licenses/\` - License text files (v1.md, v2.md, ...)
 
 ## Current Version
 
 Version ${data.newEntry.version} - ${data.newEntry.license.spdx}
 Effective: ${data.newEntry.effective_date}
+
+## All Versions
+
+${allEntries.map(e => `- v${e.version}: ${e.license.spdx} (effective ${e.effective_date})`).join('\n')}
 
 ## Verification
 
@@ -122,8 +124,8 @@ To publish this registry:
 To verify/fetch this registry:
 1. Resolve ENS name → get IPFS directory CID
 2. Fetch \`/registry.json\` from that CID
-3. Use \`head_entry_path\` to fetch the current entry
-4. Verify license text SHA-256 hash matches
+3. All entries are inline in the manifest
+4. Verify license text SHA-256 hashes match the files in /licenses/
 `;
 
   zip.file("README.md", readme);

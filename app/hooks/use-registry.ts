@@ -2,7 +2,7 @@
  * useRegistry Hook
  * 
  * Fetches and manages the license registry state.
- * Resolves ENS name → contenthash → registry.json → entries
+ * Resolves ENS name → contenthash → registry.json (which contains all entries inline)
  */
 
 import { useEffect, useState, useCallback } from "react";
@@ -21,9 +21,6 @@ import { verifyHash } from "~/lib/hash";
 /**
  * Resolve ENS name via .limo gateway.
  * The .limo gateway handles ENS → IPFS resolution for us.
- * 
- * @param ensName - The ENS name (e.g., "license.florianglatz.eth")
- * @returns The base URL for fetching content
  */
 function getEnsGatewayUrl(ensName: string): string {
   return `https://${ensName}.limo`;
@@ -31,17 +28,15 @@ function getEnsGatewayUrl(ensName: string): string {
 
 /**
  * Fetch JSON from ENS gateway with CORS handling.
- * Falls back to no-cors mode if regular fetch fails.
  */
 async function fetchFromEnsGateway<T>(ensName: string, path: string): Promise<T> {
   const baseUrl = getEnsGatewayUrl(ensName);
   const url = `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
   
   try {
-    // Try with CORS mode first
     const response = await fetch(url, {
       mode: 'cors',
-      credentials: 'omit', // Don't send cookies - this often helps with CORS
+      credentials: 'omit',
       headers: {
         'Accept': 'application/json',
       },
@@ -57,11 +52,9 @@ async function fetchFromEnsGateway<T>(ensName: string, path: string): Promise<T>
     }
     return response.json();
   } catch (error) {
-    // Re-throw with helpful message
     if (error instanceof TypeError && error.message.includes('fetch')) {
       throw new Error(
-        `Network error fetching from ENS gateway. The gateway may block cross-origin requests. ` +
-        `Set VITE_REGISTRY_CID in your .env file to use direct IPFS access.`
+        `Network error fetching from ENS gateway. Set VITE_REGISTRY_CID for direct IPFS access.`
       );
     }
     throw error;
@@ -71,7 +64,7 @@ async function fetchFromEnsGateway<T>(ensName: string, path: string): Promise<T>
 /**
  * Fetch text from ENS gateway with CORS handling.
  */
-async function fetchTextFromEnsGateway(ensName: string, path: string): Promise<string> {
+export async function fetchTextFromEnsGateway(ensName: string, path: string): Promise<string> {
   const baseUrl = getEnsGatewayUrl(ensName);
   const url = `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
   
@@ -109,7 +102,7 @@ async function fetchTextFromEnsGateway(ensName: string, path: string): Promise<s
 export interface UseRegistryResult {
   /** Current state of the registry */
   state: RegistryState;
-  /** The full entry chain (head to genesis) */
+  /** The full entry chain (newest to oldest) */
   entryChain: LicenseEntry[];
   /** Refresh the registry data */
   refresh: () => Promise<void>;
@@ -147,6 +140,8 @@ export function useRegistry(
     setState({ status: "loading" });
 
     try {
+      let manifest: RegistryManifest;
+      
       // Check if we have a direct CID override (useful for development/testing)
       const directCid = import.meta.env.VITE_REGISTRY_CID;
       const useDirectCid = directCid && contentRefOverride === undefined;
@@ -157,107 +152,40 @@ export function useRegistry(
         setContentRef(ref);
         
         const ipfs = getIpfsGateway();
-        const manifest = await ipfs.fetchFromDir<RegistryManifest>(ref.hash, "/registry.json");
-        
-        if (manifest.schema !== "commonground-license-registry/v1") {
-          throw new Error(`Unknown registry schema: ${manifest.schema}`);
-        }
-
-        const headEntry = await ipfs.fetchFromDir<LicenseEntry>(ref.hash, manifest.head_entry_path);
-        
-        if (headEntry.schema !== "commonground-license-entry/v1") {
-          throw new Error(`Unknown entry schema: ${headEntry.schema}`);
-        }
-
-        const chain: LicenseEntry[] = [headEntry];
-        for (let version = headEntry.version - 1; version >= 1; version--) {
-          try {
-            const prevEntry = await ipfs.fetchFromDir<LicenseEntry>(ref.hash, `/entries/v${version}.json`);
-            chain.push(prevEntry);
-          } catch {
-            break;
-          }
-        }
-
-        setEntryChain(chain);
-        setState({ status: "loaded", manifest, currentEntry: headEntry });
-        return;
-      }
-
-      if (contentRefOverride) {
+        manifest = await ipfs.fetchFromDir<RegistryManifest>(ref.hash, "/registry.json");
+      } else if (contentRefOverride) {
         // Use provided content reference with IPFS gateway
         setContentRef(contentRefOverride);
         
         const ipfs = getIpfsGateway();
-        const manifest = await ipfs.fetchFromDir<RegistryManifest>(contentRefOverride.hash, "/registry.json");
-        
-        if (manifest.schema !== "commonground-license-registry/v1") {
-          throw new Error(`Unknown registry schema: ${manifest.schema}`);
-        }
-
-        const headEntry = await ipfs.fetchFromDir<LicenseEntry>(contentRefOverride.hash, manifest.head_entry_path);
-        
-        if (headEntry.schema !== "commonground-license-entry/v1") {
-          throw new Error(`Unknown entry schema: ${headEntry.schema}`);
-        }
-
-        const chain: LicenseEntry[] = [headEntry];
-        for (let version = headEntry.version - 1; version >= 1; version--) {
-          try {
-            const prevEntry = await ipfs.fetchFromDir<LicenseEntry>(contentRefOverride.hash, `/entries/v${version}.json`);
-            chain.push(prevEntry);
-          } catch {
-            break;
-          }
-        }
-
-        setEntryChain(chain);
-        setState({ status: "loaded", manifest, currentEntry: headEntry });
-        return;
-      }
-
-      // Use ENS gateway (.limo) to resolve and fetch
-      // The .limo gateway handles ENS → IPFS resolution automatically
-      if (!ensName) {
+        manifest = await ipfs.fetchFromDir<RegistryManifest>(contentRefOverride.hash, "/registry.json");
+      } else if (ensName) {
+        // Use ENS gateway (.limo) to resolve and fetch
+        setContentRef({ protocol: "ens", hash: ensName });
+        manifest = await fetchFromEnsGateway<RegistryManifest>(ensName, "/registry.json");
+      } else {
         setState({ status: "not_found", ensName: "unknown" });
         return;
       }
 
-      // Note: When using .limo gateway, we don't have the raw CID
-      // Set a placeholder content ref for display purposes
-      setContentRef({ protocol: "ens", hash: ensName });
-
-      // Fetch manifest via ENS gateway
-      const manifest = await fetchFromEnsGateway<RegistryManifest>(ensName, "/registry.json");
-      
+      // Validate schema
       if (manifest.schema !== "commonground-license-registry/v1") {
         throw new Error(`Unknown registry schema: ${manifest.schema}`);
       }
 
-      // Fetch the head entry
-      const headEntry = await fetchFromEnsGateway<LicenseEntry>(ensName, manifest.head_entry_path);
+      // Entries are now inline in the manifest
+      if (!manifest.entries || manifest.entries.length === 0) {
+        throw new Error("Registry has no entries");
+      }
+
+      // Entries are sorted newest first
+      const currentEntry = manifest.entries[0];
       
-      if (headEntry.schema !== "commonground-license-entry/v1") {
-        throw new Error(`Unknown entry schema: ${headEntry.schema}`);
-      }
-
-      // Build the entry chain by version numbers
-      const chain: LicenseEntry[] = [headEntry];
-      for (let version = headEntry.version - 1; version >= 1; version--) {
-        try {
-          const prevEntry = await fetchFromEnsGateway<LicenseEntry>(ensName, `/entries/v${version}.json`);
-          chain.push(prevEntry);
-        } catch {
-          break;
-        }
-      }
-
-      setEntryChain(chain);
-      setState({ status: "loaded", manifest, currentEntry: headEntry });
+      setEntryChain(manifest.entries);
+      setState({ status: "loaded", manifest, currentEntry });
     } catch (error) {
       console.error("Failed to fetch registry:", error);
       
-      // Check if it's a network error (likely means no content at ENS)
       if (error instanceof TypeError && error.message.includes("fetch")) {
         setState({ status: "not_found", ensName: ensName ?? "unknown" });
       } else {
@@ -284,7 +212,7 @@ export function useRegistry(
 }
 
 /**
- * Hook to verify a license entry and its chain.
+ * Hook to verify a license entry.
  * 
  * @param entry - The entry to verify
  * @param contentRef - The content reference for fetching files
@@ -308,16 +236,15 @@ export function useEntryVerification(
     const entries: LicenseEntry[] = [];
 
     try {
-      // Verify the current entry
       entries.push(entry);
 
-      // Check 1: Schema version
+      // Check 1: Required fields present
       checks.push({
-        id: "schema",
-        description: "Entry schema is valid",
-        passed: entry.schema === "commonground-license-entry/v1",
-        error: entry.schema !== "commonground-license-entry/v1" 
-          ? `Invalid schema: ${entry.schema}` 
+        id: "structure",
+        description: "Entry structure is valid",
+        passed: !!(entry.version && entry.effective_date && entry.license),
+        error: !(entry.version && entry.effective_date && entry.license) 
+          ? "Missing required fields" 
           : undefined,
       });
 
@@ -326,10 +253,8 @@ export function useEntryVerification(
         let licenseText: string;
         
         if (contentRef.protocol === "ens") {
-          // Fetch via ENS gateway
           licenseText = await fetchTextFromEnsGateway(contentRef.hash, entry.license.text_path);
         } else {
-          // Fetch via IPFS gateway
           const ipfs = getIpfsGateway();
           licenseText = await ipfs.fetchTextFromDir(contentRef.hash, entry.license.text_path);
         }
@@ -349,10 +274,6 @@ export function useEntryVerification(
           error: `Failed to fetch license text: ${error}`,
         });
       }
-
-      // Note: No signature or governance doc verification needed.
-      // Trust comes from the DAO governance vote that updates the ENS contenthash.
-      // The on-chain transaction IS the proof of authorization.
 
       setResult({
         valid: checks.every(c => c.passed),
@@ -380,4 +301,3 @@ export function useEntryVerification(
 
   return { verifying, result, verify };
 }
-

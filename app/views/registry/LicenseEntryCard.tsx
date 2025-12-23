@@ -55,7 +55,6 @@ export function LicenseEntryCard({
 }: LicenseEntryCardProps) {
   const licenseName = getLicenseName(entry.license.spdx);
   const effectiveDate = formatDate(entry.effective_date);
-  const createdAt = formatDate(entry.created_at);
 
   // Build gateway URL for viewing license
   const licenseUrl = contentRef
@@ -77,7 +76,7 @@ export function LicenseEntryCard({
           )}
         </div>
         <span className="text-sm text-text-muted">
-          {createdAt}
+          Effective: {effectiveDate}
         </span>
       </div>
 
